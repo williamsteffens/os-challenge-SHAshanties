@@ -55,12 +55,13 @@ void process_packet(int sock) {
    uint64_t i;
    union Bound no_to_hash, result;
    uint8_t hash_found[SHA256_DIGEST_LENGTH];
-   int flag_match = 0;
+   int flag_match;
 
    /* This for-loop brute force checks the hashing value
     * of numbers from start to end */
    for (i = start.v; i < end.v; i++) {
       no_to_hash.v = i;
+      flag_match = 0;
 
       /* Hash the current number */
       SHA256(no_to_hash.raw, PACKET_RESPONSE_SIZE, hash_found);
