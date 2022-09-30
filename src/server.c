@@ -17,7 +17,6 @@
 
 #include <string.h>
 
-#include "SHASHArealsolved.h"
 #include "messages.h"
 
 
