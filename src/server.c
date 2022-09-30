@@ -86,17 +86,7 @@ int main(int argc, char *argv[]) {
    
    // Accept connection from client
    clilen = sizeof(cli_addr);
-   if ((ns = accept(s, (struct sockaddr *)&cli_addr, &clilen)) == -1) {
-      perror("[server] error accept()");
-      exit(6);
-   }
-	
-   // Read request from client
-   bzero(buffer, PACKET_REQUEST_SIZE);
-   if ((read(ns, buffer, PACKET_REQUEST_SIZE)) == -1) {
-      perror("[server] error read()");
-      exit(7);
-   }
+
 
    // Display data received
    // Use a union when you get it to work
@@ -105,54 +95,77 @@ int main(int argc, char *argv[]) {
    uint64_t end;
    uint8_t prio;
 
-   // Zerolize vars
-   bzero(&hash, SHA256_DIGEST_LENGTH);
-   bzero(&start, 8);
-   bzero(&end, 8);
-   bzero(&prio, 1);
-
-   // Extrat data from request/msg
-   // TODO: change this to use a union
-   memcpy(&hash, buffer + PACKET_REQUEST_HASH_OFFSET, SHA256_DIGEST_LENGTH);
-   memcpy(&start, buffer + PACKET_REQUEST_START_OFFSET, 8);
-   memcpy(&end, buffer + PACKET_REQUEST_END_OFFSET, 8);
-   prio = buffer[PACKET_REQUEST_PRIO_OFFSET];
-   
-   // Convert from big/netword endian to host endian
-   // Convert from hex to val
-   printf("hash: ");
-   for (int i = SHA256_DIGEST_LENGTH - 1; i >= 0; --i)
-      printf("%02x", hash[i]);
-   printf("\n");
-
-   printf("start: %d\n", (int)be64toh(start));
-   printf("end:   %d\n", (int)be64toh(end));
-   printf("p:     %u\n", prio);
-   
-
-   // Brute force
-   uint8_t guessHash[SHA256_DIGEST_LENGTH];
-   uint8_t guess[8] = {0};
-   for (uint64_t i = be64toh(start); i < be64toh(end); ++i) {
-      memcpy(&guess, &i, 8);
-      SHA256(guess, sizeof(uint64_t), guessHash);
-      if (bruteForceHash(hash, guessHash)) {
-         answer = i;
-         break;
+   while (1) {
+      if ((ns = accept(s, (struct sockaddr *)&cli_addr, &clilen)) == -1) {
+         perror("[server] error accept()");
+         exit(6);
       }
-   }
-   
-   // Write response to client
-   answer = htobe64(answer);
 
-   if ((write(ns, &answer, sizeof(uint64_t))) == -1) {
-      perror("[server] error write()");
-      exit(8);
-   }
-   
-   close(ns);
-   close(s);
+      if ((pid = fork()) < 0)  {
+         perror("[server] error fork()");
+         exit(6);
+      } 
 
+      if (pid == 0) {
+         close(s);
+
+         // Read request from client
+         bzero(buffer, PACKET_REQUEST_SIZE);
+         if ((read(ns, buffer, PACKET_REQUEST_SIZE)) == -1) {
+            perror("[server] error read()");
+            exit(7);
+         }
+
+         // Zerolize vars
+         bzero(&hash, SHA256_DIGEST_LENGTH);
+         bzero(&start, 8);
+         bzero(&end, 8);
+         bzero(&prio, 1);
+
+         // Extrat data from request/msg
+         // TODO: change this to use a union
+         memcpy(&hash, buffer + PACKET_REQUEST_HASH_OFFSET, SHA256_DIGEST_LENGTH);
+         memcpy(&start, buffer + PACKET_REQUEST_START_OFFSET, 8);
+         memcpy(&end, buffer + PACKET_REQUEST_END_OFFSET, 8);
+         prio = buffer[PACKET_REQUEST_PRIO_OFFSET];
+   
+         // Convert from big/netword endian to host endian
+         // Convert from hex to val
+         printf("hash: ");
+         for (int i = SHA256_DIGEST_LENGTH - 1; i >= 0; --i)
+            printf("%02x", hash[i]);
+         printf("\n");
+
+         printf("start: %d\n", (int)be64toh(start));
+         printf("end:   %d\n", (int)be64toh(end));
+         printf("p:     %u\n", prio);
+   
+         // Brute force
+         uint8_t guessHash[SHA256_DIGEST_LENGTH];
+         uint8_t guess[8] = {0};
+         for (uint64_t i = be64toh(start); i < be64toh(end); ++i) {
+            memcpy(&guess, &i, 8);
+            SHA256(guess, sizeof(uint64_t), guessHash);
+            if (bruteForceHash(hash, guessHash)) {
+               answer = i;
+               break;
+            }
+         }
+   
+         // Write response to client
+         answer = htobe64(answer);
+
+         if ((write(ns, &answer, sizeof(uint64_t))) == -1) {
+            perror("[server] error write()");
+            exit(8);
+         }
+
+         exit(0);
+      } else {
+         close(ns);
+      } 
+   }
+	
    printf("[server] Server ended successfully\n");
       
    return 0;
