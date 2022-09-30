@@ -1,4 +1,4 @@
-#define DEBUG 1
+#define DEBUG 0
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,12 +22,18 @@
 
 
 
-typedef union request {
+typedef struct _request {
    uint8_t hash[SHA256_DIGEST_LENGTH];
    uint64_t start;
    uint64_t end;
    uint8_t prio;
 } request;
+
+typedef union _response {
+   uint64_t num;
+   uint8_t bytes[8];
+} response; 
+
 
 unsigned short port; 
 int s; 
@@ -41,6 +47,8 @@ uint64_t answer;
 
 
 int bruteForceHash(uint8_t hash[SHA256_DIGEST_LENGTH], uint8_t guessHash[SHA256_DIGEST_LENGTH]);
+void SHASolver(int ns);
+
 
 
 int main(int argc, char *argv[]) {
@@ -87,14 +95,6 @@ int main(int argc, char *argv[]) {
    // Accept connection from client
    clilen = sizeof(cli_addr);
 
-
-   // Display data received
-   // Use a union when you get it to work
-   uint8_t hash[SHA256_DIGEST_LENGTH];
-   uint64_t start;
-   uint64_t end;
-   uint8_t prio;
-
    while (1) {
       if ((ns = accept(s, (struct sockaddr *)&cli_addr, &clilen)) == -1) {
          perror("[server] error accept()");
@@ -108,58 +108,7 @@ int main(int argc, char *argv[]) {
 
       if (pid == 0) {
          close(s);
-
-         // Read request from client
-         bzero(buffer, PACKET_REQUEST_SIZE);
-         if ((read(ns, buffer, PACKET_REQUEST_SIZE)) == -1) {
-            perror("[server] error read()");
-            exit(7);
-         }
-
-         // Zerolize vars
-         bzero(&hash, SHA256_DIGEST_LENGTH);
-         bzero(&start, 8);
-         bzero(&end, 8);
-         bzero(&prio, 1);
-
-         // Extrat data from request/msg
-         // TODO: change this to use a union
-         memcpy(&hash, buffer + PACKET_REQUEST_HASH_OFFSET, SHA256_DIGEST_LENGTH);
-         memcpy(&start, buffer + PACKET_REQUEST_START_OFFSET, 8);
-         memcpy(&end, buffer + PACKET_REQUEST_END_OFFSET, 8);
-         prio = buffer[PACKET_REQUEST_PRIO_OFFSET];
-   
-         // Convert from big/netword endian to host endian
-         // Convert from hex to val
-         printf("hash: ");
-         for (int i = SHA256_DIGEST_LENGTH - 1; i >= 0; --i)
-            printf("%02x", hash[i]);
-         printf("\n");
-
-         printf("start: %d\n", (int)be64toh(start));
-         printf("end:   %d\n", (int)be64toh(end));
-         printf("p:     %u\n", prio);
-   
-         // Brute force
-         uint8_t guessHash[SHA256_DIGEST_LENGTH];
-         uint8_t guess[8] = {0};
-         for (uint64_t i = be64toh(start); i < be64toh(end); ++i) {
-            memcpy(&guess, &i, 8);
-            SHA256(guess, sizeof(uint64_t), guessHash);
-            if (bruteForceHash(hash, guessHash)) {
-               answer = i;
-               break;
-            }
-         }
-   
-         // Write response to client
-         answer = htobe64(answer);
-
-         if ((write(ns, &answer, sizeof(uint64_t))) == -1) {
-            perror("[server] error write()");
-            exit(8);
-         }
-
+         SHASolver(ns);
          exit(0);
       } else {
          close(ns);
@@ -179,6 +128,52 @@ int bruteForceHash(uint8_t hash[SHA256_DIGEST_LENGTH], uint8_t guessHash[SHA256_
    return 1;
 }
 
-void SHASHArealsolved();
-void tobeHASHtinued();
-void solver_I_barely_know_her();
+void SHASolver(int ns) {
+   // Read request from client
+   bzero(buffer, PACKET_REQUEST_SIZE);
+   if ((read(ns, buffer, PACKET_REQUEST_SIZE)) == -1) {
+      perror("[server] error read()");
+      exit(7);
+   }
+
+   // Zerolize vars
+   request req = {0};
+
+   // Extrat data from request/msg
+   memcpy(&req.hash, buffer + PACKET_REQUEST_HASH_OFFSET, SHA256_DIGEST_LENGTH);
+   memcpy(&req.start, buffer + PACKET_REQUEST_START_OFFSET, 8);
+   memcpy(&req.end, buffer + PACKET_REQUEST_END_OFFSET, 8);
+   req.prio = buffer[PACKET_REQUEST_PRIO_OFFSET];
+
+   // Endianness 
+   req.start = be64toh(req.start);
+   req.end = be64toh(req.end);
+
+   #if DEBUG
+      printf("hash: ");
+      for (int i = SHA256_DIGEST_LENGTH - 1; i >= 0; --i)
+         printf("%02x", req.hash[i]);
+      printf("\n");
+
+      printf("start: %d\n", (int)req.start);
+      printf("end:   %d\n", (int)req.end);
+      printf("p:     %u\n", req.prio);
+   #endif 
+
+   // Brute force
+   uint8_t guessHash[SHA256_DIGEST_LENGTH];
+   response res = {0};
+   for (res.num = req.start; res.num < req.end; ++res.num) {
+      SHA256(res.bytes, sizeof(uint64_t), guessHash);
+      if (bruteForceHash(req.hash, guessHash)) {
+         res.num = htobe64(res.num);
+         break;
+      }
+   }
+
+   // Write response to client
+   if ((write(ns, res.bytes, sizeof(uint64_t))) == -1) {
+      perror("[server] error write()");
+      exit(8);
+   }
+}
