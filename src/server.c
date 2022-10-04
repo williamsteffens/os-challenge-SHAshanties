@@ -45,7 +45,7 @@ uint64_t answer;
 
 
 
-int bruteForceHash(uint8_t hash[SHA256_DIGEST_LENGTH], uint8_t guessHash[SHA256_DIGEST_LENGTH]);
+int hashMatches(uint8_t hash[SHA256_DIGEST_LENGTH], uint8_t guessHash[SHA256_DIGEST_LENGTH]);
 void SHASolver(int ns);
 
 
@@ -119,7 +119,7 @@ int main(int argc, char *argv[]) {
    return 0;
 }
 
-int bruteForceHash(uint8_t hash[SHA256_DIGEST_LENGTH], uint8_t guessHash[SHA256_DIGEST_LENGTH]) {
+int hashMatches(uint8_t hash[SHA256_DIGEST_LENGTH], uint8_t guessHash[SHA256_DIGEST_LENGTH]) {
    for (int i = 0; i < SHA256_DIGEST_LENGTH; ++i)
       if (hash[i] != guessHash[i])
          return 0;
@@ -164,7 +164,7 @@ void SHASolver(int ns) {
    response res = {0};
    for (res.num = req.start; res.num < req.end; ++res.num) {
       SHA256(res.bytes, sizeof(uint64_t), guessHash);
-      if (bruteForceHash(req.hash, guessHash)) {
+      if (hashMatches(req.hash, guessHash)) {
          res.num = htobe64(res.num);
          break;
       }
