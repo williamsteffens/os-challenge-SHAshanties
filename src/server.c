@@ -2,7 +2,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-// TODO: check for the need of the includes
 #include <errno.h>
 
 #include <unistd.h>
@@ -11,12 +10,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <netinet/in.h>
-
-// is included in messages.h
-// #include <openssl/sha.h>
-
 #include <string.h>
-
 #include "messages.h"
 
 
@@ -32,7 +26,6 @@ typedef union _response {
    uint64_t num;
    uint8_t bytes[8];
 } response; 
-
 
 unsigned short port; 
 int s; 
