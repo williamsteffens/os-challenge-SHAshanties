@@ -63,6 +63,7 @@ int main(int argc, char *argv[]) {
    while (1) {
       readySockets = currentSockets; 
       
+      
       // TODO: max + 1 ??? 
       if (select(maxSocketSoFar + 1, &readySockets, NULL, NULL, NULL) < 0) {
          perror("[server] error select()");
