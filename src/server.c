@@ -3,14 +3,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
-
 #include <unistd.h>
-
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <string.h>
+
 #include "messages.h"
 
 
@@ -27,19 +26,18 @@ typedef union _response {
    uint8_t bytes[8];
 } response; 
 
-unsigned short port; 
-int s; 
-int ns, clilen;
+int clilen;
 uint8_t buffer[PACKET_REQUEST_SIZE];
-struct sockaddr_in serv_addr, cli_addr;
-int pid;
+pid_t pid;
 
 uint64_t answer;
 
 
 
+int setupServer(short port, int backlog);
+int acceptNewConnection(int servSocket);
 int hashMatches(uint8_t hash[SHA256_DIGEST_LENGTH], uint8_t guessHash[SHA256_DIGEST_LENGTH]);
-void SHASolver(int ns);
+void SHASolver(int clientSocket);
 
 
 
@@ -50,17 +48,49 @@ int main(int argc, char *argv[]) {
    }   
 
    // First Argument should be the socket
-   port = (unsigned short) atoi(argv[1]);
+   short port = (short) atoi(argv[1]);
    
+   // Look into the backlog stuff
+   int servSocket = setupServer(port, 100);
+
+   while (1) {
+      // Accept connection from client
+      int cliSocket = acceptNewConnection(servSocket);
+
+      if ((pid = fork()) < 0)  {
+         perror("[server] error fork()");
+         exit(6);
+      } 
+
+      if (pid == 0) {
+         close(servSocket);
+         SHASolver(cliSocket);
+         exit(0);
+      } else {
+         close(cliSocket);
+      } 
+   }
+	
+   printf("[server] Server ended successfully\n");
+      
+   return 0;
+}
+
+
+
+int setupServer(short port, int backlog) {
+   int servSocket;
+   struct sockaddr_in serv_addr;
+
    // Get socket for accepting connections
-   if ((s = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+   if ((servSocket = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
       perror("[server] error socket()");
       exit(2);
    }
 
    // Set socket option to reuse the addr/port without waiting for it to be release 
-   int optval = 1;
-   if ((setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval))) < 0) {
+   int optVal = 1;
+   if ((setsockopt(servSocket, SOL_SOCKET, SO_REUSEADDR, &optVal, sizeof(optVal))) < 0) {
       perror("[server] error setsockopt()");
       exit(3);
    }
@@ -72,47 +102,33 @@ int main(int argc, char *argv[]) {
    serv_addr.sin_addr.s_addr = INADDR_ANY;
    serv_addr.sin_port = htons(port);
    
-   if ((bind(s, (struct sockaddr *) &serv_addr, sizeof(serv_addr))) < 0) {
+   if ((bind(servSocket, (struct sockaddr *) &serv_addr, sizeof(serv_addr))) < 0) {
       perror("[server] error bind()");
       exit(4);
    }
    
    // Listen for connection, backlog = 5
-   if ((listen(s,5)) != 0) {
+   if ((listen(servSocket, backlog)) != 0) {
       perror("[server] error listen()");
       exit(5);
    }
    printf("[server] Listening on port %d...\n", port);
-   
-   // Accept connection from client
-   clilen = sizeof(cli_addr);
 
-   while (1) {
-      if ((ns = accept(s, (struct sockaddr *)&cli_addr, &clilen)) == -1) {
-         perror("[server] error accept()");
-         exit(6);
-      }
-
-      if ((pid = fork()) < 0)  {
-         perror("[server] error fork()");
-         exit(6);
-      } 
-
-      if (pid == 0) {
-         close(s);
-         SHASolver(ns);
-         exit(0);
-      } else {
-         close(ns);
-      } 
-   }
-	
-   printf("[server] Server ended successfully\n");
-      
-   return 0;
+   return servSocket;
 }
 
+int acceptNewConnection(int servSocket) {
+   int cliSocket;
+   struct sockaddr_in cli_addr;
+   clilen = sizeof(cli_addr);
 
+   if ((cliSocket = accept(servSocket, (struct sockaddr *)&cli_addr, &clilen)) == -1) {
+      perror("[server] error accept()");
+      exit(6);
+   }
+
+   return cliSocket;
+}
 
 int hashMatches(uint8_t hash[SHA256_DIGEST_LENGTH], uint8_t guessHash[SHA256_DIGEST_LENGTH]) {
    for (int i = 0; i < SHA256_DIGEST_LENGTH; ++i)
