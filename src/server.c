@@ -112,6 +112,8 @@ int main(int argc, char *argv[]) {
    return 0;
 }
 
+
+
 int hashMatches(uint8_t hash[SHA256_DIGEST_LENGTH], uint8_t guessHash[SHA256_DIGEST_LENGTH]) {
    for (int i = 0; i < SHA256_DIGEST_LENGTH; ++i)
       if (hash[i] != guessHash[i])
