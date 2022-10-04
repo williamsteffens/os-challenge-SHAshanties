@@ -1,4 +1,4 @@
-#define DEBUG 0
+#define DEBUG 1
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,6 +10,8 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <string.h>
+
+#include <inttypes.h>
 
 #include "messages.h"
 
@@ -56,21 +58,25 @@ int main(int argc, char *argv[]) {
    fd_set currentSockets, readySockets;
    FD_ZERO(&currentSockets);
    FD_SET(servSocket, &currentSockets);
+   int maxSocketSoFar = servSocket; 
 
    while (1) {
       readySockets = currentSockets; 
-
-      if (select(FD_SETSIZE, &readySockets, NULL, NULL, NULL) < 0) {
+      
+      // TODO: max + 1 ??? 
+      if (select(maxSocketSoFar + 1, &readySockets, NULL, NULL, NULL) < 0) {
          perror("[server] error select()");
          exit(EXIT_FAILURE);
       }
 
-      for (int i = 0; i < FD_SETSIZE; ++i)
+      for (int i = 0; i <= maxSocketSoFar + 1; ++i)
          if (FD_ISSET(i, &readySockets))
             if (i == servSocket) {
                // There's data to read
                int cliSocket = acceptNewConnection(servSocket);
                FD_SET(cliSocket, &currentSockets);
+               if (cliSocket > maxSocketSoFar)
+                  maxSocketSoFar = cliSocket;
             } 
             else {
                SHASolver(i);
@@ -198,6 +204,9 @@ void SHASolver(int cliSocket) {
    for (res.num = req.start; res.num < req.end; ++res.num) {
       SHA256(res.bytes, sizeof(uint64_t), guessHash);
       if (hashMatches(req.hash, guessHash)) {
+         #if DEBUG
+            printf("ans: %" PRIu64 "\n\n", res.num);
+         #endif
          res.num = htobe64(res.num);
          break;
       }
@@ -208,4 +217,5 @@ void SHASolver(int cliSocket) {
       perror("[server] error write()");
       exit(EXIT_FAILURE);
    }
+
 }
