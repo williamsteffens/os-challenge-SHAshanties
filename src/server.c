@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/select.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <string.h>
@@ -26,7 +27,6 @@ typedef union _response {
    uint8_t bytes[8];
 } response; 
 
-int clilen;
 uint8_t buffer[PACKET_REQUEST_SIZE];
 pid_t pid;
 
@@ -37,43 +37,65 @@ uint64_t answer;
 int setupServer(short port, int backlog);
 int acceptNewConnection(int servSocket);
 int hashMatches(uint8_t hash[SHA256_DIGEST_LENGTH], uint8_t guessHash[SHA256_DIGEST_LENGTH]);
-void SHASolver(int clientSocket);
+void SHASolver(int cliSocket);
 
 
 
 int main(int argc, char *argv[]) {
    if (argc != 2) {
       fprintf(stderr, "Incorrect usage. Usage: %s port\n", argv[0]);
-      exit(1);
+      exit(EXIT_FAILURE);
    }   
 
    // First Argument should be the socket
    short port = (short) atoi(argv[1]);
    
-   // Look into the backlog stuff
+   // TODO: Look into the backlog stuff
    int servSocket = setupServer(port, 100);
 
+   fd_set currentSockets, readySockets;
+   FD_ZERO(&currentSockets);
+   FD_SET(servSocket, &currentSockets);
+
    while (1) {
+      readySockets = currentSockets; 
+
+      if (select(FD_SETSIZE, &readySockets, NULL, NULL, NULL) < 0) {
+         perror("[server] error select()");
+         exit(EXIT_FAILURE);
+      }
+
+      for (int i = 0; i < FD_SETSIZE; ++i)
+         if (FD_ISSET(i, &readySockets))
+            if (i == servSocket) {
+               // There's data to read
+               int cliSocket = acceptNewConnection(servSocket);
+               FD_SET(cliSocket, &currentSockets);
+            } 
+            else {
+               SHASolver(i);
+               FD_CLR(i, &currentSockets);
+            }
+
       // Accept connection from client
-      int cliSocket = acceptNewConnection(servSocket);
 
-      if ((pid = fork()) < 0)  {
-         perror("[server] error fork()");
-         exit(6);
-      } 
+      // if ((pid = fork()) < 0)  {
+      //    perror("[server] error fork()");
+      //    exit(EXIT_FAILURE);
+      // } 
 
-      if (pid == 0) {
-         close(servSocket);
-         SHASolver(cliSocket);
-         exit(0);
-      } else {
-         close(cliSocket);
-      } 
+      // if (pid == 0) {
+      //    close(servSocket);
+      //    SHASolver(cliSocket);
+      //    exit(0);
+      // } else {
+      //    close(cliSocket);
+      // } 
    }
 	
    printf("[server] Server ended successfully\n");
       
-   return 0;
+   return EXIT_SUCCESS;
 }
 
 
@@ -85,14 +107,14 @@ int setupServer(short port, int backlog) {
    // Get socket for accepting connections
    if ((servSocket = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
       perror("[server] error socket()");
-      exit(2);
+      exit(EXIT_FAILURE);
    }
 
    // Set socket option to reuse the addr/port without waiting for it to be release 
    int optVal = 1;
    if ((setsockopt(servSocket, SOL_SOCKET, SO_REUSEADDR, &optVal, sizeof(optVal))) < 0) {
       perror("[server] error setsockopt()");
-      exit(3);
+      exit(EXIT_FAILURE);
    }
 
    // Bind socket to server addr
@@ -104,13 +126,13 @@ int setupServer(short port, int backlog) {
    
    if ((bind(servSocket, (struct sockaddr *) &serv_addr, sizeof(serv_addr))) < 0) {
       perror("[server] error bind()");
-      exit(4);
+      exit(EXIT_FAILURE);
    }
    
    // Listen for connection, backlog = 5
    if ((listen(servSocket, backlog)) != 0) {
       perror("[server] error listen()");
-      exit(5);
+      exit(EXIT_FAILURE);
    }
    printf("[server] Listening on port %d...\n", port);
 
@@ -120,11 +142,11 @@ int setupServer(short port, int backlog) {
 int acceptNewConnection(int servSocket) {
    int cliSocket;
    struct sockaddr_in cli_addr;
-   clilen = sizeof(cli_addr);
+   int clilen = sizeof(cli_addr);
 
    if ((cliSocket = accept(servSocket, (struct sockaddr *)&cli_addr, &clilen)) == -1) {
       perror("[server] error accept()");
-      exit(6);
+      exit(EXIT_FAILURE);
    }
 
    return cliSocket;
@@ -138,12 +160,12 @@ int hashMatches(uint8_t hash[SHA256_DIGEST_LENGTH], uint8_t guessHash[SHA256_DIG
    return 1;
 }
 
-void SHASolver(int ns) {
+void SHASolver(int cliSocket) {
    // Read request from client
    bzero(buffer, PACKET_REQUEST_SIZE);
-   if ((read(ns, buffer, PACKET_REQUEST_SIZE)) == -1) {
+   if ((read(cliSocket, buffer, PACKET_REQUEST_SIZE)) == -1) {
       perror("[server] error read()");
-      exit(7);
+      exit(EXIT_FAILURE);
    }
 
    // Zerolize vars
@@ -182,8 +204,8 @@ void SHASolver(int ns) {
    }
 
    // Write response to client
-   if ((write(ns, res.bytes, sizeof(uint64_t))) == -1) {
+   if ((write(cliSocket, res.bytes, sizeof(uint64_t))) == -1) {
       perror("[server] error write()");
-      exit(8);
+      exit(EXIT_FAILURE);
    }
 }
