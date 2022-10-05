@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <errno.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -9,11 +10,11 @@
 #include <sys/select.h>
 #include <netdb.h>
 #include <netinet/in.h>
-#include <string.h>
 
 #include <inttypes.h>
 
 #include "messages.h"
+#include "hashTable.h"
 
 
 
@@ -32,7 +33,7 @@ typedef union _response {
 uint8_t buffer[PACKET_REQUEST_SIZE];
 pid_t pid;
 
-uint64_t answer;
+hashTable_t* hashtable;
 
 
 
@@ -59,6 +60,8 @@ int main(int argc, char *argv[]) {
    FD_ZERO(&currentSockets);
    FD_SET(servSocket, &currentSockets);
    int maxSocketSoFar = servSocket; 
+
+   hashtable = htInit();
 
    while (1) {
       readySockets = currentSockets; 
@@ -178,6 +181,18 @@ void SHASolver(int cliSocket) {
 
    // Extrat data from request/msg
    memcpy(&req.hash, buffer + PACKET_REQUEST_HASH_OFFSET, SHA256_DIGEST_LENGTH);
+
+   // respond before anything else if we have the hash in the cache
+   if (htContainsKey(hashtable, req.hash)) {
+      uint64_t ans = htGet(hashtable, req.hash);
+      if ((write(cliSocket, &ans, sizeof(uint64_t))) == -1) {
+         perror("[server] error write()");
+         exit(EXIT_FAILURE);
+      }
+      printf("\n\thashtabled, biatch\n");
+      return;
+   }
+
    memcpy(&req.start, buffer + PACKET_REQUEST_START_OFFSET, 8);
    memcpy(&req.end, buffer + PACKET_REQUEST_END_OFFSET, 8);
    req.prio = buffer[PACKET_REQUEST_PRIO_OFFSET];
@@ -207,6 +222,7 @@ void SHASolver(int cliSocket) {
             printf("ans: %" PRIu64 "\n\n", res.num);
          #endif
          res.num = htobe64(res.num);
+         htSet(hashtable, req.hash, res.num);
          break;
       }
    }
