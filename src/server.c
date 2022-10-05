@@ -63,7 +63,6 @@ int main(int argc, char *argv[]) {
    while (1) {
       readySockets = currentSockets; 
       
-      
       // TODO: max + 1 ??? 
       if (select(maxSocketSoFar + 1, &readySockets, NULL, NULL, NULL) < 0) {
          perror("[server] error select()");
@@ -160,11 +159,10 @@ int acceptNewConnection(int servSocket) {
 }
 
 int hashMatches(uint8_t hash[SHA256_DIGEST_LENGTH], uint8_t guessHash[SHA256_DIGEST_LENGTH]) {
-   for (int i = 0; i < SHA256_DIGEST_LENGTH; ++i)
-      if (hash[i] != guessHash[i])
-         return 0;
-   
-   return 1;
+   if (memcmp(hash, guessHash, SHA256_DIGEST_LENGTH) == 0)
+      return 1;
+   else 
+      return 0;
 }
 
 void SHASolver(int cliSocket) {
