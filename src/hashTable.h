@@ -69,6 +69,8 @@ hashTable_t* htInit() {
 }
 
 void htSet(hashTable_t* table, uint8_t* key, uint64_t val) {
+    // TODO: Insert at the beginning of the list instead, to improve the access time
+
     int index = hash(key);
     entry_t* entry = table->entries[index];
 
