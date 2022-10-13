@@ -35,41 +35,53 @@ typedef union _response {
 
 
 unsigned short port; 
-int s; 
-int ns, clilen;
+int listen_sd; 
+int on = 1;
+int conn_sd, clilen;
 uint8_t buffer[PACKET_REQUEST_SIZE];
+struct pollfd fds[200];
 struct sockaddr_in serv_addr, cli_addr;
-int pid;
+pid_t pid;
+int timeout;
+int poll_status; 
 
 uint64_t answer;
 
 
 
 int bruteForceHash(uint8_t hash[SHA256_DIGEST_LENGTH], uint8_t guessHash[SHA256_DIGEST_LENGTH]);
-void SHASolver(int ns);
+void SHASolver(int conn_sd);
 
 
 
 int main(int argc, char *argv[]) {
    if (argc != 2) {
-      fprintf(stderr, "Incorrect usage. Usage: %s port\n", argv[0]);
-      exit(1);
+      fprintf(stderr, "Incorrect usage. Usage: %listen_sd port\n", argv[0]);
+      exit(-1);
    }   
 
    // First Argument should be the socket
    port = (unsigned short) atoi(argv[1]);
    
    // Get socket for accepting connections
-   if ((s = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-      perror("[server] error socket()");
-      exit(2);
+   if ((listen_sd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+      perror("[server] socket() failed");
+      close(listen_sd);
+      exit(-1);
    }
 
    // Set socket option to reuse the addr/port without waiting for it to be release 
-   int optval = 1;
-   if ((setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval))) < 0) {
-      perror("[server] error setsockopt()");
-      exit(3);
+   if ((setsockopt(listen_sd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on))) < 0) {
+      perror("[server] setsockopt() failed");
+      close(listen_sd);
+      exit(-1);
+   }
+
+   // Set socket to be non-blocking. All clientsockets will inherit this from the listening socket.
+   if ((ioctl(listen_sd, FIONBIO, &on)) < 0) {
+      perror("[server] ioctl() failed");
+      close(listen_sd);
+      exit(-1);
    }
 
    // Bind socket to server addr
@@ -79,38 +91,75 @@ int main(int argc, char *argv[]) {
    serv_addr.sin_addr.s_addr = INADDR_ANY;
    serv_addr.sin_port = htons(port);
    
-   if ((bind(s, (struct sockaddr *) &serv_addr, sizeof(serv_addr))) < 0) {
-      perror("[server] error bind()");
-      exit(4);
+   if ((bind(listen_sd, (struct sockaddr *) &serv_addr, sizeof(serv_addr))) < 0) {
+      perror("[server] bind() failed");
+      close(listen_sd);
+      exit(-1);
    }
    
    // Listen for connection, backlog = 5
-   if ((listen(s,5)) != 0) {
-      perror("[server] error listen()");
-      exit(5);
+   if ((listen(listen_sd,5)) != 0) {
+      perror("[server] listen() failed");
+      close(listen_sd);
+      exit(-1);
    }
    printf("[server] Listening on port %d...\n", port);
    
+   // Initialize the pollfd struct 
+   memset(fds, 0 , sizeof(fds));
+
+   // Set up the initial listening socket
+   fds[0].fd = listen_sd;
+   fds[0].events = POLLIN;
+
+   // Set timeout to 3 minutes; if no activity for 3 min, the program will terminate
+   timeout = (3 * 60 * 1000);
+
    // Accept connection from client
-   clilen = sizeof(cli_addr);
+   // clilen = sizeof(cli_addr);
 
    while (1) {
-      if ((ns = accept(s, (struct sockaddr *)&cli_addr, &clilen)) == -1) {
-         perror("[server] error accept()");
-         exit(6);
+      // Wait for poll and wait 3 minuntes for it to complete
+      printf("Waiting on poll()...\n");
+      poll_status = poll(fds, nfds, timeout)
+      if (poll_status < 0) {
+         perror("[server] poll() failed");
+         close(listen_sd);
+         exit(-1);
+      }
+      else if (poll_status == 0) {
+         printf("[server] poll() timeout. Terminating server... \n");
+         close(listen_sd);
+         break; 
+      }
+
+      // One or more descriptors are readable. Iterate and find out which ones
+      
+
+
+
+
+
+
+
+      if ((conn_sd = accept(listen_sd, (struct sockaddr *)&cli_addr, &clilen)) == -1) {
+         perror("[server] accept() failed");
+         close(listen_sd);
+         exit(-1);
       }
 
       if ((pid = fork()) < 0)  {
-         perror("[server] error fork()");
-         exit(6);
+         perror("[server] fork() failed");
+         close(listen_sd);
+         exit(-1);
       } 
 
       if (pid == 0) {
-         close(s);
-         SHASolver(ns);
-         exit(0);
+         close(listen_sd);
+         SHASolver(conn_sd);
+         exit(-1);
       } else {
-         close(ns);
+         close(conn_sd);
       } 
    }
 	
@@ -127,12 +176,12 @@ int bruteForceHash(uint8_t hash[SHA256_DIGEST_LENGTH], uint8_t guessHash[SHA256_
    return 1;
 }
 
-void SHASolver(int ns) {
+void SHASolver(int conn_sd) {
    // Read request from client
    bzero(buffer, PACKET_REQUEST_SIZE);
-   if ((read(ns, buffer, PACKET_REQUEST_SIZE)) == -1) {
-      perror("[server] error read()");
-      exit(7);
+   if ((read(conn_sd, buffer, PACKET_REQUEST_SIZE)) == -1) {
+      perror("[server] read() failed");
+   exit(-1);
    }
 
    // Zerolize vars
@@ -171,8 +220,8 @@ void SHASolver(int ns) {
    }
 
    // Write response to client
-   if ((write(ns, res.bytes, sizeof(uint64_t))) == -1) {
-      perror("[server] error write()");
-      exit(8);
+   if ((write(conn_sd, res.bytes, sizeof(uint64_t))) == -1) {
+      perror("[server] write() failed");
+      exit(-1);
    }
 }
