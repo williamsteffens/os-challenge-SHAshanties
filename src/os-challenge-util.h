@@ -26,15 +26,16 @@
 
 
 typedef struct request {
-   uint8_t hash[SHA256_DIGEST_LENGTH];
-   uint64_t start;
-   uint64_t end;
-   uint8_t prio;
+  int sd;
+  uint8_t hash[SHA256_DIGEST_LENGTH];
+  uint64_t start;
+  uint64_t end;
+  uint8_t prio;
 } request_t;
 
 typedef union response {
-   uint64_t num;
-   uint8_t bytes[8];
+  uint64_t num;
+  uint8_t bytes[8];
 } response_t; 
 
 

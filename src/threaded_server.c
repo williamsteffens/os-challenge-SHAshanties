@@ -10,7 +10,6 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <unistd.h>
-#include <fcntl.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <arpa/inet.h>
@@ -20,10 +19,21 @@
 #include "os-challenge-util.h"
 #include "server.h"
 #include "brute_force.h"
+#include "simple_queue.h"
 
 #include "threaded_server.h"
 
-void* brute_force_SHA_threaded(void* p_conn_sd); 
+
+
+pthread_mutex_t queue_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t queue_cond_var = PTHREAD_COND_INITIALIZER;
+
+
+
+void* brute_force_SHA_threaded(void* p_conn_sd);
+void* brute_force_SHA_threaded_pool_busy_handler();
+void* brute_force_SHA_threaded_pool_handler();
+
 
 
 void launch_thread_per_client_server(struct Server *server)
@@ -43,6 +53,68 @@ void launch_thread_per_client_server(struct Server *server)
     }
 }
 
+void launch_thread_per_client_innate_prio_server(struct Server *server)
+{
+    int conn_sd, socklen;
+    struct sockaddr_in cli_addr;
+    socklen = sizeof(cli_addr);
+
+    for (;;) {
+        if ((conn_sd = accept(server->socket, (struct sockaddr *)&cli_addr, &socklen)) < 0) {
+            printf("[server][!] accept() failed \n");
+            close(conn_sd);
+        }
+        // TODO: set the prio of the threads
+        pthread_t t;
+        pthread_create(&t, NULL, brute_force_SHA_threaded, &conn_sd);
+    }
+}
+
+// TODO: add thread_pool size as a parameter for testing? Could be easier
+void launch_thread_pool_busy_wait_server(struct Server *server)
+{
+    int conn_sd, socklen;
+    struct sockaddr_in cli_addr;
+    socklen = sizeof(cli_addr);
+
+    pthread_t thread_pool[4];
+    for (int i = 0; i < 4; ++i)
+        pthread_create(&thread_pool[i], NULL, brute_force_SHA_threaded_pool_busy_handler, NULL);
+
+    for (;;) {
+        if ((conn_sd = accept(server->socket, (struct sockaddr *)&cli_addr, &socklen)) < 0) {
+            printf("[server][!] accept() failed \n");
+            close(conn_sd);
+        }
+
+        pthread_mutex_lock(&queue_mutex);
+        enqueue(&conn_sd);
+        pthread_mutex_unlock(&queue_mutex);
+    }
+}
+
+void launch_thread_pool_server(struct Server *server)
+{
+    int conn_sd, socklen;
+    struct sockaddr_in cli_addr;
+    socklen = sizeof(cli_addr);
+
+    pthread_t thread_pool[4];
+    for (int i = 0; i < 4; ++i)
+        pthread_create(&thread_pool[i], NULL, brute_force_SHA_threaded_pool_handler, NULL);
+
+    for (;;) {
+        if ((conn_sd = accept(server->socket, (struct sockaddr *)&cli_addr, &socklen)) < 0) {
+            printf("[server][!] accept() failed \n");
+            close(conn_sd);
+        }
+
+        pthread_mutex_lock(&queue_mutex);
+        enqueue(&conn_sd);
+        pthread_cond_signal(&queue_cond_var);
+        pthread_mutex_unlock(&queue_mutex);
+    }
+}
 
 
 
@@ -101,3 +173,34 @@ void* brute_force_SHA_threaded(void* p_conn_sd)
     }
 
 }
+
+void* brute_force_SHA_threaded_pool_busy_handler()
+{
+    for (;;) {
+        pthread_mutex_lock(&queue_mutex);
+        int *pconn_sd = dequeue();
+        pthread_mutex_unlock(&queue_mutex);
+
+        if (pconn_sd != NULL)
+            brute_force_SHA_threaded(pconn_sd);
+    }
+}
+
+void* brute_force_SHA_threaded_pool_handler()
+{
+    int *pconn_sd;
+    for (;;) {
+        pthread_mutex_lock(&queue_mutex);
+        if ((pconn_sd = dequeue()) == NULL) {
+            pthread_cond_wait(&queue_cond_var, &queue_mutex);
+            pconn_sd = dequeue();
+        }
+        pthread_mutex_unlock(&queue_mutex);
+
+        brute_force_SHA_threaded(pconn_sd);
+    }
+}
+
+
+
+//void task_splitter(re)

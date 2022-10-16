@@ -42,7 +42,7 @@ static void epoll_ctl_add(int epfd, int fd, uint32_t events)
 
 
 
-void launch_epoll(struct Server *server)
+void launch_epoll_server(struct Server *server)
 {
 	int epfd, nfds;
 	int conn_sd, socklen;
