@@ -22,21 +22,7 @@
 
 #include <string.h>
 
-#include "messages.h"
-
-
-
-typedef struct _request {
-   uint8_t hash[SHA256_DIGEST_LENGTH];
-   uint64_t start;
-   uint64_t end;
-   uint8_t prio;
-} request;
-
-typedef union _response {
-   uint64_t num;
-   uint8_t bytes[8];
-} response; 
+#include "os-challenge-util.h"
 
 
 unsigned short port; 
@@ -172,8 +158,8 @@ int main(int argc, char *argv[]) {
                
                char outAddress[69 + 1];
 
-               inet_ntop(AF_INET, &cli_addr, outAddress, 69);
-               printf("Client cunt: %s\n", outAddress);
+               inet_ntop(AF_INET, (char *)&(cli_addr.sin_addr), buffer, sizeof(cli_addr));
+				   printf("[+] connected with %s:%d\n", buffer, ntohs(cli_addr.sin_port));
 
                printf("[server] New incoming connection - %d\n", conn_sd);
                fds[nfds].fd = conn_sd;
@@ -186,35 +172,37 @@ int main(int argc, char *argv[]) {
             close_conn = false;
 
             do {
-               rc = recv(fds[i].fd, buffer, sizeof(buffer), 0);
-               if (rc < 0) {
-                  if (errno != EWOULDBLOCK) {
-                     perror("[server] \trecv() failed");
-                     close_conn = true;
-                  }
-                  break;
-               }
+               // rc = recv(fds[i].fd, buffer, sizeof(buffer), 0);
+               // if (rc < 0) {
+               //    if (errno != EWOULDBLOCK) {
+               //       perror("[server] \trecv() failed");
+               //       close_conn = true;
+               //    }
+               //    break;
+               // }
 
                
-               // Check to see if the connection has been closed by the client
-               if (rc == 0) {
-                  printf("[server] \tConnection closed\n");
-                  close_conn = true;
-                  break;
-               }
+               // // Check to see if the connection has been closed by the client
+               // if (rc == 0) {
+               //    printf("[server] \tConnection closed\n");
+               //    close_conn = true;
+               //    break;
+               // }
 
-               // Data was received 
-               len = rc;
-               printf("[server] \t%d bytes received\n", len);
+               // // Data was received 
+               // len = rc;
+               // printf("[server] \t%d bytes received\n", len);
 
             
+               SHASolver(fds[i].fd);
+
                // Echo the data back to the client
-               rc = send(fds[i].fd, buffer, len, 0);
-               if (rc < 0) {
-                  perror("[server] \tsend() failed");
-                  close_conn = true;
-                  break;
-               }
+               // rc = send(fds[i].fd, buffer, len, 0);
+               // if (rc < 0) {
+               //    perror("[server] \tsend() failed");
+               //    close_conn = true;
+               //    break;
+               // }
 
                // TEST 
                // if (step % 2 == 0) {
@@ -225,6 +213,8 @@ int main(int argc, char *argv[]) {
                //    rc = send(fds[i].fd, buffer, len, 0);
                // }
                // ++step;
+
+               close(fds[i].fd);
 
             } while(true);
 
@@ -294,7 +284,7 @@ void SHASolver(int conn_sd) {
    }
 
    // Zerolize vars
-   request req = {0};
+   request_t req = {0};
 
    // Extrat data from request/msg
    memcpy(&req.hash, buffer + PACKET_REQUEST_HASH_OFFSET, SHA256_DIGEST_LENGTH);
@@ -319,7 +309,7 @@ void SHASolver(int conn_sd) {
 
    // Brute force
    uint8_t guessHash[SHA256_DIGEST_LENGTH];
-   response res = {0};
+   response_t res = {0};
    for (res.num = req.start; res.num < req.end; ++res.num) {
       SHA256(res.bytes, sizeof(uint64_t), guessHash);
       if (bruteForceHash(req.hash, guessHash)) {
