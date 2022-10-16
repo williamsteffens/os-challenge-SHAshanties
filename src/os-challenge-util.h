@@ -39,6 +39,4 @@ typedef union response {
 
 
 
-int hashMatches(uint8_t hash[SHA256_DIGEST_LENGTH], uint8_t guessHash[SHA256_DIGEST_LENGTH]);
-
 void display_request(char buffer[PACKET_REQUEST_SIZE], request_t req);

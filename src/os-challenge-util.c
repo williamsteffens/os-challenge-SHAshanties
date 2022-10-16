@@ -2,13 +2,6 @@
 #include <string.h>
 #include "os-challenge-util.h"
 
-int hashMatches(uint8_t hash[SHA256_DIGEST_LENGTH], uint8_t guessHash[SHA256_DIGEST_LENGTH])
-{
-   if (memcmp(hash, guessHash, SHA256_DIGEST_LENGTH) == 0)
-      return 1;
-   else 
-      return 0;
-}
 
 void display_request(char buffer[PACKET_REQUEST_SIZE], request_t req)
 {
