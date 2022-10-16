@@ -1,7 +1,4 @@
-#include "brute_force.h"
-#include "os-challenge-util.h"
-#include <stdlib.h>
-#include <string.h>
+#define DEBUG 0
 
 #include <stdio.h>
 #include <string.h>
@@ -20,25 +17,46 @@
 #include <pthread.h>
 
 
+#include "os-challenge-util.h"
+#include "server.h"
+#include "brute_force.h"
+
+#include "threaded_server.h"
+
+void* brute_force_SHA_threaded(void* p_conn_sd); 
 
 
-int hashMatches(uint8_t hash[SHA256_DIGEST_LENGTH], uint8_t guessHash[SHA256_DIGEST_LENGTH])
+void launch_thread_per_client_server(struct Server *server)
 {
-   if (memcmp(hash, guessHash, SHA256_DIGEST_LENGTH) == 0)
-      return 1;
-   else 
-      return 0;
+    int conn_sd, socklen;
+    struct sockaddr_in cli_addr;
+    socklen = sizeof(cli_addr);
+
+    for (;;) {
+        if ((conn_sd = accept(server->socket, (struct sockaddr *)&cli_addr, &socklen)) < 0) {
+            printf("[server][!] accept() failed \n");
+            close(conn_sd);
+        }
+
+        pthread_t t;
+        pthread_create(&t, NULL, brute_force_SHA_threaded, &conn_sd);
+    }
 }
 
-void brute_force_SHA(int conn_sd) 
+
+
+
+void* brute_force_SHA_threaded(void* p_conn_sd)
 {
+    int conn_sd = *((int*)p_conn_sd);
+
     uint8_t buffer[PACKET_REQUEST_SIZE];
 
     // Read request from client
     bzero(buffer, PACKET_REQUEST_SIZE);
     if ((read(conn_sd, buffer, PACKET_REQUEST_SIZE)) == -1) {
         perror("[server] read() failed");
-    exit(-1);
+        exit(-1);
     }
 
     // Zerolize vars
