@@ -147,6 +147,20 @@ void launch_x_threads_one_client_server(struct Server *server, int nthreads)
     }
 }
 
+void sumbit_task(int sd, uint8_t hash[SHA256_DIGEST_LENGTH], uint64_t start, uint64_t end, bool *pdone)
+{
+    task_t *ptask = malloc(sizeof(task_t));
+    ptask->sd = sd; 
+    memcpy(&ptask->hash, hash, SHA256_DIGEST_LENGTH);
+    ptask->start = start;
+    ptask->end = end;
+    ptask->done = pdone; 
+    pthread_mutex_lock(&queue_mutex);
+    enqueue_task(ptask);
+    pthread_cond_signal(&queue_cond_var);
+    pthread_mutex_unlock(&queue_mutex);
+}
+
 void distribute_work(int conn_sd, int nthreads)
 {
     uint8_t buffer[PACKET_REQUEST_SIZE];
@@ -159,7 +173,7 @@ void distribute_work(int conn_sd, int nthreads)
 
     // hashtable goes here
     
-    request_t   req = {0};
+    request_t req = {0};
     memcpy(&req.hash, buffer + PACKET_REQUEST_HASH_OFFSET, SHA256_DIGEST_LENGTH);
     memcpy(&req.start, buffer + PACKET_REQUEST_START_OFFSET, 8);
     memcpy(&req.end, buffer + PACKET_REQUEST_END_OFFSET, 8);
@@ -168,33 +182,15 @@ void distribute_work(int conn_sd, int nthreads)
     req.end = be64toh(req.end);
 
     unsigned long range = req.end - req.start;
-    unsigned int chunk = 1 + ((range - 1) / nthreads); // ceil(range/nthreads)
+    unsigned int chunk = 1 + ((range - 1) / nthreads); // ceil(range/nthreads)-ish --- NOTE THE -ISH
 
     bool *pdone = malloc(sizeof(bool));
-    *pdone = false; 
+    *pdone = false;
     for (int i = 0; i < nthreads - 1; ++i) {
-        task_t *ptask = malloc(sizeof(task_t));
-        ptask->sd = conn_sd; 
-        memcpy(&ptask->hash, &req.hash, SHA256_DIGEST_LENGTH);
-        ptask->start = req.start + i * chunk;
-        ptask->end = req.start + (i + 1) * chunk;
-        ptask->done = pdone; 
-        pthread_mutex_lock(&queue_mutex);
-        enqueue_task(ptask);
-        pthread_cond_signal(&queue_cond_var);
-        pthread_mutex_unlock(&queue_mutex);
+        sumbit_task(conn_sd, req.hash, req.start + i * chunk, req.start + (i + 1) * chunk, pdone);
     }
-    task_t *ptask = malloc(sizeof(task_t));
-    ptask->sd = conn_sd;
-    ptask->start = req.start + (nthreads - 1) * chunk;
-    ptask->end = req.end;
-    ptask->done = pdone;
-    memcpy(&ptask->hash, &req.hash, SHA256_DIGEST_LENGTH);
-    pthread_mutex_lock(&queue_mutex);
-    enqueue_task(ptask);
-    pthread_cond_signal(&queue_cond_var);
-    pthread_mutex_unlock(&queue_mutex);
-
+    sumbit_task(conn_sd, req.hash, req.start + (nthreads - 1) * chunk, req.end, pdone);
+    
 }
 
 void* worker_thread()
