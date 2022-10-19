@@ -17,6 +17,32 @@ static tpool_work_t *tpool_work_create(thread_func_t func, void *arg)
     return work;
 }
 
+bool tpool_add_work(tpool_t *tp, thread_func_t func, void *arg)
+{
+    tpool_work_t *work;
+
+    if (tp == NULL)
+        return false;
+
+    work = tpool_work_create(func, arg);
+    if (work == NULL)
+        return false;
+
+    pthread_mutex_lock(&(tp->work_mutex));
+    if (tp->work_first == NULL) {
+        tp->work_first = work;
+        tp->work_last  = tp->work_first;
+    } else {
+        tp->work_last->next = work;
+        tp->work_last       = work;
+    }
+
+    pthread_cond_broadcast(&(tp->work_cond));
+    pthread_mutex_unlock(&(tp->work_mutex));
+
+    return true;
+}
+
 static void tpool_work_destroy(tpool_work_t *work)
 {
     if (work == NULL)
@@ -122,32 +148,6 @@ void tpool_wait(tpool_t *tp)
         }
     }
     pthread_mutex_unlock(&(tp->work_mutex));
-}
-
-bool tpool_add_work(tpool_t *tp, thread_func_t func, void *arg)
-{
-    tpool_work_t *work;
-
-    if (tp == NULL)
-        return false;
-
-    work = tpool_work_create(func, arg);
-    if (work == NULL)
-        return false;
-
-    pthread_mutex_lock(&(tp->work_mutex));
-    if (tp->work_first == NULL) {
-        tp->work_first = work;
-        tp->work_last  = tp->work_first;
-    } else {
-        tp->work_last->next = work;
-        tp->work_last       = work;
-    }
-
-    pthread_cond_broadcast(&(tp->work_cond));
-    pthread_mutex_unlock(&(tp->work_mutex));
-
-    return true;
 }
 
 void tpool_destroy(tpool_t *tp)

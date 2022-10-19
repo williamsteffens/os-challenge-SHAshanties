@@ -22,6 +22,7 @@
 #include "server.h"
 #include "brute_force.h"
 #include "simple_queue.h"
+#include "thread_pool.h"
 
 #include "threaded_server.h"
 
@@ -33,7 +34,7 @@ pthread_cond_t queue_cond_var = PTHREAD_COND_INITIALIZER;
 
 
 void coordinator(int listen_socket, int ntasks);
-void coordinator_II(int listen_socket, int ntasks);
+void coordinator_II(int listen_socket, int nthreads, int ntasks);
 
 void* brute_force_SHA_threaded_v1(void* p_conn_sd);
 void* brute_force_SHA_threaded_pool_busy_worker();
@@ -55,6 +56,20 @@ void sumbit_task(int sd, uint8_t hash[SHA256_DIGEST_LENGTH], uint64_t start, uin
     enqueue_task(ptask);
     pthread_cond_signal(&queue_cond_var);
     pthread_mutex_unlock(&queue_mutex);
+}
+
+request_t decode_req(int req_socket, uint8_t buffer[PACKET_REQUEST_SIZE])
+{
+    request_t req = {0};
+    req.sd = req_socket;
+    memcpy(&req.hash, buffer + PACKET_REQUEST_HASH_OFFSET, SHA256_DIGEST_LENGTH);
+    memcpy(&req.start, buffer + PACKET_REQUEST_START_OFFSET, 8);
+    memcpy(&req.end, buffer + PACKET_REQUEST_END_OFFSET, 8);
+    req.prio = buffer[PACKET_REQUEST_PRIO_OFFSET];
+    req.start = be64toh(req.start);
+    req.end = be64toh(req.end);
+
+    return req;
 }
 
 
@@ -249,27 +264,80 @@ void launch_x_threads_one_client_server_many_tasks_in_order_server(struct Server
     
 }
 
-void launch_x_threads_one_client_server_many_tasks_server(struct Server *server, int nthreads)
-{
-    pthread_t thread_pool[nthreads];
-    for (int i = 0; i < nthreads; ++i)
-        pthread_create(&thread_pool[i], NULL, worker_thread_II, NULL);
 
-    coordinator_II(server->socket, nthreads);
+void brute_force_worker(void *arg)
+{
+    bf_task_t *ptask = (bf_task_t*)arg; 
+    uint8_t guess_hash[SHA256_DIGEST_LENGTH];
+    response_t res = {0};
+
+    for (res.num = ptask->start; res.num < ptask->end; ++res.num) {
+        SHA256(res.bytes, sizeof(uint64_t), guess_hash);
+        if (memcmp(ptask->hash, guess_hash, SHA256_DIGEST_LENGTH) == 0) {
+            res.num = htobe64(res.num);
+            if ((write(ptask->sd, res.bytes, sizeof(uint64_t))) == -1) {
+                perror("[server] write() failed");
+                exit(-1);
+            }
+
+            close(ptask->sd);
+
+            // hashtable last:)
+
+            // tell tpool to halt this round, it will then continue to the next
+
+            break;
+        }
+    }
+
+    free(ptask);
 }
 
-void coordinator_II(int listen_socket, int ntasks)
+void assign_work(tpool_t *tp, request_t req, int ntasks)
+{
+    unsigned long range = req.end - req.start;
+    unsigned int chunk = 1 + ((range - 1) / ntasks); // ceil(range/nthreads)-ish --- NOTE THE -ISH
+    
+    for (int i = 0; i < ntasks - 1; ++i) {
+        bf_task_t *ptask = malloc(sizeof(bf_task_t));
+        ptask->tp    = tp;
+        ptask->sd    = req.sd;
+        memcpy(&ptask->hash, &req.hash, SHA256_DIGEST_LENGTH);
+        ptask->start = req.start + i * chunk;
+        ptask->end   = req.start + (i + 1) * chunk;
+
+        tpool_add_work(tp, brute_force_worker, ptask);
+    }
+    bf_task_t *ptask = malloc(sizeof(bf_task_t));
+    ptask->tp    = tp;
+    ptask->sd    = req.sd;
+    memcpy(&ptask->hash, &req.hash, SHA256_DIGEST_LENGTH);
+    ptask->start = req.start + (ntasks - 1) * chunk;
+    ptask->end   = req.end;
+
+    tpool_add_work(tp, brute_force_worker, ptask);
+
+}
+
+void launch_x_threads_one_client_server_many_tasks_server(struct Server *server, int nthreads)
+{
+    coordinator_II(server->socket, nthreads, nthreads);
+}
+
+void coordinator_II(int listen_socket, int nthreads, int ntasks)
 {
     int conn_sd, socklen;
     struct sockaddr_in cli_addr;
     socklen = sizeof(cli_addr);
     uint8_t buffer[PACKET_REQUEST_SIZE];
+    tpool_t *tp = tpool_create(nthreads);
 
     for (;;) {
         // TODO: Polling might still be viable
         if ((conn_sd = accept(listen_socket, (struct sockaddr *)&cli_addr, &socklen)) < 0) {
             perror("[server][!] accept() failed \n");
             close(conn_sd);
+            exit(-1);
         }
 
         bzero(buffer, PACKET_REQUEST_SIZE);
@@ -277,28 +345,22 @@ void coordinator_II(int listen_socket, int ntasks)
             perror("[server] read() failed");
             exit(-1);
         }
-
-        request_t req = {0};
-        memcpy(&req.hash, buffer + PACKET_REQUEST_HASH_OFFSET, SHA256_DIGEST_LENGTH);
-        // hashtable here
-        memcpy(&req.start, buffer + PACKET_REQUEST_START_OFFSET, 8);
-        memcpy(&req.end, buffer + PACKET_REQUEST_END_OFFSET, 8);
-        req.prio = buffer[PACKET_REQUEST_PRIO_OFFSET];
-        req.start = be64toh(req.start);
-        req.end = be64toh(req.end);
-
-        unsigned long range = req.end - req.start;
-        unsigned int chunk = 1 + ((range - 1) / ntasks); // ceil(range/nthreads)-ish --- NOTE THE -ISH
-
-        bool *pdone = malloc(sizeof(bool));
-        *pdone = false;
-        for (int i = 0; i < ntasks - 1; ++i) {
-            sumbit_task(conn_sd, req.hash, req.start + i * chunk, req.start + (i + 1) * chunk, pdone);
-        }
-        sumbit_task(conn_sd, req.hash, req.start + (ntasks - 1) * chunk, req.end, pdone);
-
-        // increase this and make it randomly choosen from the task queue
+        
+        // TODO: could split it up, so we return the hashed request after reading the hash and dont bother with the additional info
+        request_t req = decode_req(conn_sd, buffer);
+        
+        // hashtable
+            // if isinhashtable
+                // send
+            // if current_processing
+                // wait and send -- or -- make a thread that will handle it once it gets woken by the workers 
+        
+        assign_work(tp, req, ntasks);
+        
+        tpool_wait(tp);
     }
+
+    tpool_destroy(tp);
 
 }
 
@@ -353,6 +415,30 @@ void* worker_thread_II()
     }
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

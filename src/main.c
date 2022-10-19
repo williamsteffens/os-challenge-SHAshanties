@@ -27,6 +27,6 @@ int main(int argc, char *argv[])
     //launch_thread_per_client_server(&server);
     //launch_thread_pool_busy_wait_server(&server);
     //launch_thread_pool_server(&server);
-    launch_x_threads_one_client_server(&server, 4);
-    //launch_x_threads_one_client_server_many_tasks_server(&server, 4); // sysconf(_SC_NPROCESSORS_CONF)
+    //launch_x_threads_one_client_server(&server, 4);
+    launch_x_threads_one_client_server_many_tasks_server(&server, 4); // sysconf(_SC_NPROCESSORS_CONF)
 }
