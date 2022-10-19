@@ -254,9 +254,6 @@ void* worker_thread()
             }
         }
 
-        // might need a barrier here?
-
-        //free(ptask->done);
         free(ptask);
     }
 
