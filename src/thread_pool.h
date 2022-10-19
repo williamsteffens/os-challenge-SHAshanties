@@ -22,7 +22,6 @@ typedef struct tpool {
     pthread_cond_t   working_cond;
     size_t           working_cnt;
     size_t           thread_cnt;
-    bool             halt;
     bool             terminate;
 } tpool_t;
 

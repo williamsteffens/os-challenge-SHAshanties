@@ -3,8 +3,10 @@
 #include "thread_pool.h"
 #include "os-challenge-util.h"
 
+
+
 typedef struct bf_task {
-    tpool_t *tp; 
+    bool *done; 
     uint8_t hash[SHA256_DIGEST_LENGTH];
     int sd;
     uint64_t start;

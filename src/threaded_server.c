@@ -40,7 +40,6 @@ void* brute_force_SHA_threaded_v1(void* p_conn_sd);
 void* brute_force_SHA_threaded_pool_busy_worker();
 void* brute_force_SHA_threaded_pool_worker();
 void* worker_thread();
-void* worker_thread_II();
 
 
 
@@ -272,6 +271,9 @@ void brute_force_worker(void *arg)
     response_t res = {0};
 
     for (res.num = ptask->start; res.num < ptask->end; ++res.num) {
+        if (*(ptask->done) == true) 
+            break;
+
         SHA256(res.bytes, sizeof(uint64_t), guess_hash);
         if (memcmp(ptask->hash, guess_hash, SHA256_DIGEST_LENGTH) == 0) {
             res.num = htobe64(res.num);
@@ -285,6 +287,8 @@ void brute_force_worker(void *arg)
             // hashtable last:)
 
             // tell tpool to halt this round, it will then continue to the next
+            *(ptask->done) = true;
+            free(ptask->done);
 
             break;
         }
@@ -298,20 +302,22 @@ void assign_work(tpool_t *tp, request_t req, int ntasks)
     unsigned long range = req.end - req.start;
     unsigned int chunk = 1 + ((range - 1) / ntasks); // ceil(range/nthreads)-ish --- NOTE THE -ISH
     
+    bool *done = malloc(sizeof(bool));
+    *done = false;
     for (int i = 0; i < ntasks - 1; ++i) {
         bf_task_t *ptask = malloc(sizeof(bf_task_t));
-        ptask->tp    = tp;
-        ptask->sd    = req.sd;
+        ptask->done  = done;
         memcpy(&ptask->hash, &req.hash, SHA256_DIGEST_LENGTH);
+        ptask->sd    = req.sd;
         ptask->start = req.start + i * chunk;
         ptask->end   = req.start + (i + 1) * chunk;
 
         tpool_add_work(tp, brute_force_worker, ptask);
     }
     bf_task_t *ptask = malloc(sizeof(bf_task_t));
-    ptask->tp    = tp;
-    ptask->sd    = req.sd;
+    ptask->done  = done;
     memcpy(&ptask->hash, &req.hash, SHA256_DIGEST_LENGTH);
+    ptask->sd    = req.sd;
     ptask->start = req.start + (ntasks - 1) * chunk;
     ptask->end   = req.end;
 
@@ -355,67 +361,17 @@ void coordinator_II(int listen_socket, int nthreads, int ntasks)
             // if current_processing
                 // wait and send -- or -- make a thread that will handle it once it gets woken by the workers 
         
+        // wait should be here so that the prio of the next request and be assessed
+        // tpool_wait(tp);
+
         assign_work(tp, req, ntasks);
-        
+
         tpool_wait(tp);
     }
 
     tpool_destroy(tp);
 
 }
-
-void* worker_thread_II()
-{
-    task_t *ptask;
-    pthread_detach(pthread_self());
-    uint8_t guess_hash[SHA256_DIGEST_LENGTH];
-
-    for (;;) {
-        pthread_mutex_lock(&queue_mutex);
-            while ((ptask = dequeue_task()) == NULL) {
-                pthread_cond_wait(&queue_cond_var, &queue_mutex);
-            }
-        pthread_mutex_unlock(&queue_mutex);
-
-        #if DEBUG
-            printf("task hash: ");
-            for (int i = SHA256_DIGEST_LENGTH - 1; i >= 0; --i)
-                printf("%02x", ptask->hash[i]);
-            printf("\n");
-
-            printf("task start: %lu\n", ptask->start);
-            printf("task end:   %lu\n", ptask->end);
-            printf("task done: %d\n", *(ptask->done));
-        #endif
-
-        response_t res = {0};
-        for (res.num = ptask->start; res.num < ptask->end; ++res.num) {
-            if (*(ptask->done) == true) {
-                break;
-            }
-            
-            SHA256(res.bytes, sizeof(uint64_t), guess_hash);
-            if (memcmp(ptask->hash, guess_hash, SHA256_DIGEST_LENGTH) == 0) {
-                res.num = htobe64(res.num);
-                if ((write(ptask->sd, res.bytes, sizeof(uint64_t))) == -1) {
-                    perror("[server] write() failed");
-                    exit(-1);
-                }
-
-                *(ptask->done) = true; 
-                free(ptask->done);
-                close(ptask->sd);
-
-                // hashtable last:)
-                break;
-            }
-        }
-
-        free(ptask);
-    }
-
-}
-
 
 
 
