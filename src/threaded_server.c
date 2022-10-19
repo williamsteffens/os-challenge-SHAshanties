@@ -74,7 +74,6 @@ void launch_thread_per_client_innate_prio_server(struct Server *server)
     }
 }
 
-// TODO: add thread_pool size as a parameter for testing? Could be easier
 void launch_thread_pool_busy_wait_server(struct Server *server)
 {
     int conn_sd, socklen;
@@ -143,9 +142,11 @@ void launch_x_threads_one_client_server(struct Server *server, int nthreads)
             close(conn_sd);
         }
 
-        distribute_work(conn_sd, nthreads);
+        distribute_work(conn_sd, 4); // increase this and make it randomly choosen from the task queue
     }
 }
+
+
 
 void sumbit_task(int sd, uint8_t hash[SHA256_DIGEST_LENGTH], uint64_t start, uint64_t end, bool *pdone)
 {
@@ -161,7 +162,7 @@ void sumbit_task(int sd, uint8_t hash[SHA256_DIGEST_LENGTH], uint64_t start, uin
     pthread_mutex_unlock(&queue_mutex);
 }
 
-void distribute_work(int conn_sd, int nthreads)
+void distribute_work(int conn_sd, int ntasks)
 {
     uint8_t buffer[PACKET_REQUEST_SIZE];
     bzero(buffer, PACKET_REQUEST_SIZE);
@@ -182,14 +183,14 @@ void distribute_work(int conn_sd, int nthreads)
     req.end = be64toh(req.end);
 
     unsigned long range = req.end - req.start;
-    unsigned int chunk = 1 + ((range - 1) / nthreads); // ceil(range/nthreads)-ish --- NOTE THE -ISH
+    unsigned int chunk = 1 + ((range - 1) / ntasks); // ceil(range/nthreads)-ish --- NOTE THE -ISH
 
     bool *pdone = malloc(sizeof(bool));
     *pdone = false;
-    for (int i = 0; i < nthreads - 1; ++i) {
+    for (int i = 0; i < ntasks - 1; ++i) {
         sumbit_task(conn_sd, req.hash, req.start + i * chunk, req.start + (i + 1) * chunk, pdone);
     }
-    sumbit_task(conn_sd, req.hash, req.start + (nthreads - 1) * chunk, req.end, pdone);
+    sumbit_task(conn_sd, req.hash, req.start + (ntasks - 1) * chunk, req.end, pdone);
     
 }
 
@@ -201,9 +202,9 @@ void* worker_thread()
 
     for (;;) {
         pthread_mutex_lock(&queue_mutex);
-        while ((ptask = dequeue_task()) == NULL) {
-            pthread_cond_wait(&queue_cond_var, &queue_mutex);
-        }
+            while ((ptask = dequeue_task()) == NULL) {
+                pthread_cond_wait(&queue_cond_var, &queue_mutex);
+            }
         pthread_mutex_unlock(&queue_mutex);
 
         #if DEBUG
@@ -214,6 +215,7 @@ void* worker_thread()
 
             printf("task start: %lu\n", ptask->start);
             printf("task end:   %lu\n", ptask->end);
+            printf("task done: %d\n", *(ptask->done));
         #endif
 
         response_t res = {0};
@@ -237,8 +239,9 @@ void* worker_thread()
             }
         }
 
-        // might need a barrier here? 
+        // might need a barrier here? : yup
 
+        //free(ptask->done);
         free(ptask);
     }
 

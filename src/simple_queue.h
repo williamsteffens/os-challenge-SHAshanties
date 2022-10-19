@@ -25,5 +25,5 @@ typedef struct task_node {
 void enqueue(int *conn_sd);
 int *dequeue();
 
-void enqueue_task(task_t *task);
+void enqueue_task(task_t *ptask);
 task_t *dequeue_task();

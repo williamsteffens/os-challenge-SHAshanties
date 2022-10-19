@@ -36,10 +36,10 @@ int *dequeue()
 task_node_t* head_task = NULL; 
 task_node_t* butt_task = NULL; 
 
-void enqueue_task(task_t *task) 
+void enqueue_task(task_t *ptask) 
 {
     task_node_t *newnode = malloc(sizeof(task_node_t));
-    newnode->task = task;
+    newnode->task = ptask;
     newnode->next = NULL;
     if (butt_task == NULL)
         head_task = newnode;
