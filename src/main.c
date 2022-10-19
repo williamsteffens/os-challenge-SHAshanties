@@ -5,6 +5,7 @@
 #include "server.h"
 #include "epoll_server.h"
 #include "threaded_server.h"
+#include "server_I.h"
 
 
 
@@ -18,7 +19,9 @@ int main(int argc, char *argv[])
     // Second Argument should be port num
     short port = (unsigned short) atoi(argv[1]);
 
-    struct Server server = server_constructor(AF_INET, SOCK_STREAM, 0, INADDR_ANY, port, 100, BLOCKING);
+    struct Server server = server_constructor(AF_INET, SOCK_STREAM, 0, INADDR_ANY, port, 1000, BLOCKING);
+    launch_server_I(&server, 4, 4);
+    
     //launch_epoll_server(&server);
     //launch_poll_server(&server);
     //launch_select_server(&server);
@@ -28,5 +31,5 @@ int main(int argc, char *argv[])
     //launch_thread_pool_busy_wait_server(&server);
     //launch_thread_pool_server(&server);
     //launch_x_threads_one_client_server(&server, 4);
-    launch_x_threads_one_client_server_many_tasks_server(&server, 4); // sysconf(_SC_NPROCESSORS_CONF)
+    //launch_x_threads_one_client_server_many_tasks_server(&server, 4); // sysconf(_SC_NPROCESSORS_CONF)
 }

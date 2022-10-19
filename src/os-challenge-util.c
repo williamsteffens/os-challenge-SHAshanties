@@ -4,6 +4,21 @@
 #include "os-challenge-util.h"
 
 
+
+request_t decode_req(int req_socket, uint8_t buffer[PACKET_REQUEST_SIZE])
+{
+    request_t req = {0};
+    req.sd = req_socket;
+    memcpy(&req.hash, buffer + PACKET_REQUEST_HASH_OFFSET, SHA256_DIGEST_LENGTH);
+    memcpy(&req.start, buffer + PACKET_REQUEST_START_OFFSET, 8);
+    memcpy(&req.end, buffer + PACKET_REQUEST_END_OFFSET, 8);
+    req.prio = buffer[PACKET_REQUEST_PRIO_OFFSET];
+    req.start = be64toh(req.start);
+    req.end = be64toh(req.end);
+
+    return req;
+}
+
 void display_request(char buffer[PACKET_REQUEST_SIZE], request_t req)
 {
     memcpy(&req.hash, buffer + PACKET_REQUEST_HASH_OFFSET, SHA256_DIGEST_LENGTH);

@@ -57,20 +57,6 @@ void sumbit_task(int sd, uint8_t hash[SHA256_DIGEST_LENGTH], uint64_t start, uin
     pthread_mutex_unlock(&queue_mutex);
 }
 
-request_t decode_req(int req_socket, uint8_t buffer[PACKET_REQUEST_SIZE])
-{
-    request_t req = {0};
-    req.sd = req_socket;
-    memcpy(&req.hash, buffer + PACKET_REQUEST_HASH_OFFSET, SHA256_DIGEST_LENGTH);
-    memcpy(&req.start, buffer + PACKET_REQUEST_START_OFFSET, 8);
-    memcpy(&req.end, buffer + PACKET_REQUEST_END_OFFSET, 8);
-    req.prio = buffer[PACKET_REQUEST_PRIO_OFFSET];
-    req.start = be64toh(req.start);
-    req.end = be64toh(req.end);
-
-    return req;
-}
-
 
 
 void launch_thread_per_client_server(struct Server *server)

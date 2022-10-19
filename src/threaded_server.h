@@ -2,6 +2,7 @@
 
 #include "thread_pool.h"
 #include "os-challenge-util.h"
+#include "hash_table.h"
 
 
 
@@ -11,6 +12,7 @@ typedef struct bf_task {
     int sd;
     uint64_t start;
     uint64_t end;
+    htable_t *ht;
 } bf_task_t;
 
 
