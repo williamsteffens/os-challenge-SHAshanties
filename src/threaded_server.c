@@ -41,139 +41,6 @@ void* worker_thread();
 
 
 
-void launch_x_threads_one_client_server(struct Server *server, int nthreads)
-{
-    int conn_sd, socklen;
-    struct sockaddr_in cli_addr;
-    socklen = sizeof(cli_addr);
-
-    pthread_t thread_pool[nthreads];
-    for (int i = 0; i < nthreads; ++i)
-        pthread_create(&thread_pool[i], NULL, worker_thread, NULL);
-
-    for (;;) {
-        // TODO: Polling might still be viable
-        if ((conn_sd = accept(server->socket, (struct sockaddr *)&cli_addr, &socklen)) < 0) {
-            perror("[server][!] accept() failed \n");
-            close(conn_sd);
-        }
-
-        distribute_work(conn_sd, 4); // increase this and make it randomly choosen from the task queue
-    }
-}
-
-
-
-void sumbit_task(int sd, uint8_t hash[SHA256_DIGEST_LENGTH], uint64_t start, uint64_t end, bool *pdone)
-{
-    task_t *ptask = malloc(sizeof(task_t));
-    ptask->sd = sd; 
-    memcpy(&ptask->hash, hash, SHA256_DIGEST_LENGTH);
-    ptask->start = start;
-    ptask->end = end;
-    ptask->done = pdone; 
-    pthread_mutex_lock(&queue_mutex);
-    enqueue_task(ptask);
-    pthread_cond_signal(&queue_cond_var);
-    pthread_mutex_unlock(&queue_mutex);
-}
-
-void distribute_work(int conn_sd, int ntasks)
-{
-    uint8_t buffer[PACKET_REQUEST_SIZE];
-    bzero(buffer, PACKET_REQUEST_SIZE);
-
-    if ((read(conn_sd, buffer, PACKET_REQUEST_SIZE)) == -1) {
-        perror("[server] read() failed");
-        exit(-1);
-    }
-
-    // hashtable goes here
-    
-    request_t req = {0};
-    memcpy(&req.hash, buffer + PACKET_REQUEST_HASH_OFFSET, SHA256_DIGEST_LENGTH);
-    memcpy(&req.start, buffer + PACKET_REQUEST_START_OFFSET, 8);
-    memcpy(&req.end, buffer + PACKET_REQUEST_END_OFFSET, 8);
-    req.prio = buffer[PACKET_REQUEST_PRIO_OFFSET];
-    req.start = be64toh(req.start);
-    req.end = be64toh(req.end);
-
-    unsigned long range = req.end - req.start;
-    unsigned int chunk = 1 + ((range - 1) / ntasks); // ceil(range/nthreads)-ish --- NOTE THE -ISH
-
-    bool *pdone = malloc(sizeof(bool));
-    *pdone = false;
-    for (int i = 0; i < ntasks - 1; ++i) {
-        sumbit_task(conn_sd, req.hash, req.start + i * chunk, req.start + (i + 1) * chunk, pdone);
-    }
-    sumbit_task(conn_sd, req.hash, req.start + (ntasks - 1) * chunk, req.end, pdone);
-    
-}
-
-void* worker_thread()
-{
-    task_t *ptask;
-    pthread_detach(pthread_self());
-    uint8_t guess_hash[SHA256_DIGEST_LENGTH];
-
-    for (;;) {
-        pthread_mutex_lock(&queue_mutex);
-            while ((ptask = dequeue_task()) == NULL) {
-                pthread_cond_wait(&queue_cond_var, &queue_mutex);
-            }
-        pthread_mutex_unlock(&queue_mutex);
-
-        #if DEBUG
-            printf("task hash: ");
-            for (int i = SHA256_DIGEST_LENGTH - 1; i >= 0; --i)
-                printf("%02x", ptask->hash[i]);
-            printf("\n");
-
-            printf("task start: %lu\n", ptask->start);
-            printf("task end:   %lu\n", ptask->end);
-            printf("task done: %d\n", *(ptask->done));
-        #endif
-
-        response_t res = {0};
-        for (res.num = ptask->start; res.num < ptask->end; ++res.num) {
-            if (*(ptask->done) == true) {
-                break;
-            }
-            
-            SHA256(res.bytes, sizeof(uint64_t), guess_hash);
-            if (memcmp(ptask->hash, guess_hash, SHA256_DIGEST_LENGTH) == 0) {
-                res.num = htobe64(res.num);
-                if ((write(ptask->sd, res.bytes, sizeof(uint64_t))) == -1) {
-                    perror("[server] write() failed");
-                    exit(-1);
-                }
-
-                *(ptask->done) = true; 
-
-                close(ptask->sd);
-
-                // hashtable last:)
-                break;
-            }
-        }
-
-        // might need a barrier here?
-
-        //free(ptask->done);
-        free(ptask);
-    }
-
-}
-
-
-
-
-
-
-
-
-
-
 void launch_thread_per_client_server(struct Server *server)
 {
     int conn_sd, socklen;
@@ -258,6 +125,152 @@ void launch_thread_pool_server(struct Server *server)
         pthread_mutex_unlock(&queue_mutex);
     }
 }
+
+
+
+
+
+
+
+
+
+
+void launch_x_threads_one_client_server(struct Server *server, int nthreads)
+{
+    int conn_sd, socklen;
+    struct sockaddr_in cli_addr;
+    socklen = sizeof(cli_addr);
+
+    pthread_t thread_pool[nthreads];
+    for (int i = 0; i < nthreads; ++i)
+        pthread_create(&thread_pool[i], NULL, worker_thread, NULL);
+
+    for (;;) {
+        // TODO: Polling might still be viable
+        if ((conn_sd = accept(server->socket, (struct sockaddr *)&cli_addr, &socklen)) < 0) {
+            perror("[server][!] accept() failed \n");
+            close(conn_sd);
+        }
+
+        distribute_work(conn_sd, 4); // increase this and make it randomly choosen from the task queue
+    }
+}
+
+void sumbit_task(int sd, uint8_t hash[SHA256_DIGEST_LENGTH], uint64_t start, uint64_t end, bool *pdone)
+{
+    task_t *ptask = malloc(sizeof(task_t));
+    ptask->sd = sd; 
+    memcpy(&ptask->hash, hash, SHA256_DIGEST_LENGTH);
+    ptask->start = start;
+    ptask->end = end;
+    ptask->done = pdone; 
+    pthread_mutex_lock(&queue_mutex);
+    enqueue_task(ptask);
+    pthread_cond_signal(&queue_cond_var);
+    pthread_mutex_unlock(&queue_mutex);
+}
+
+void distribute_work(int conn_sd, int ntasks)
+{
+    uint8_t buffer[PACKET_REQUEST_SIZE];
+    bzero(buffer, PACKET_REQUEST_SIZE);
+
+    if ((read(conn_sd, buffer, PACKET_REQUEST_SIZE)) == -1) {
+        perror("[server] read() failed");
+        exit(-1);
+    }
+
+    // hashtable goes here
+    
+    request_t req = {0};
+    memcpy(&req.hash, buffer + PACKET_REQUEST_HASH_OFFSET, SHA256_DIGEST_LENGTH);
+    memcpy(&req.start, buffer + PACKET_REQUEST_START_OFFSET, 8);
+    memcpy(&req.end, buffer + PACKET_REQUEST_END_OFFSET, 8);
+    req.prio = buffer[PACKET_REQUEST_PRIO_OFFSET];
+    req.start = be64toh(req.start);
+    req.end = be64toh(req.end);
+
+    unsigned long range = req.end - req.start;
+    unsigned int chunk = 1 + ((range - 1) / ntasks); // ceil(range/nthreads)-ish --- NOTE THE -ISH
+
+    bool *pdone = malloc(sizeof(bool));
+    *pdone = false;
+    for (int i = 0; i < ntasks - 1; ++i) {
+        sumbit_task(conn_sd, req.hash, req.start + i * chunk, req.start + (i + 1) * chunk, pdone);
+    }
+    sumbit_task(conn_sd, req.hash, req.start + (ntasks - 1) * chunk, req.end, pdone);
+    
+}
+
+void coordinator()
+{
+
+}
+
+void* worker_thread()
+{
+    task_t *ptask;
+    pthread_detach(pthread_self());
+    uint8_t guess_hash[SHA256_DIGEST_LENGTH];
+
+    for (;;) {
+        pthread_mutex_lock(&queue_mutex);
+            while ((ptask = dequeue_task()) == NULL) {
+                pthread_cond_wait(&queue_cond_var, &queue_mutex);
+            }
+        pthread_mutex_unlock(&queue_mutex);
+
+        #if DEBUG
+            printf("task hash: ");
+            for (int i = SHA256_DIGEST_LENGTH - 1; i >= 0; --i)
+                printf("%02x", ptask->hash[i]);
+            printf("\n");
+
+            printf("task start: %lu\n", ptask->start);
+            printf("task end:   %lu\n", ptask->end);
+            printf("task done: %d\n", *(ptask->done));
+        #endif
+
+        response_t res = {0};
+        for (res.num = ptask->start; res.num < ptask->end; ++res.num) {
+            if (*(ptask->done) == true) {
+                break;
+            }
+            
+            SHA256(res.bytes, sizeof(uint64_t), guess_hash);
+            if (memcmp(ptask->hash, guess_hash, SHA256_DIGEST_LENGTH) == 0) {
+                res.num = htobe64(res.num);
+                if ((write(ptask->sd, res.bytes, sizeof(uint64_t))) == -1) {
+                    perror("[server] write() failed");
+                    exit(-1);
+                }
+
+                *(ptask->done) = true; 
+                free(ptask->done);
+                close(ptask->sd);
+
+                // hashtable last:)
+                break;
+            }
+        }
+
+        // might need a barrier here?
+
+        //free(ptask->done);
+        free(ptask);
+    }
+
+}
+
+
+
+
+
+
+
+
+
+
 
 
 
