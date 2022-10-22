@@ -108,25 +108,27 @@ void worker(void *arg)
             res.num = shared_req->start + num;
 
             SHA256(res.bytes, sizeof(uint64_t), guess_hash);
-            if (memcmp(shared_req->hash, guess_hash, SHA256_DIGEST_LENGTH) == 0) {
-                res.num = htobe64(res.num);
+            if (shared_req->hash[0] == guess_hash[0]) {
+                if (memcmp(shared_req->hash, guess_hash, SHA256_DIGEST_LENGTH) == 0) {
+                    res.num = htobe64(res.num);
 
-                // mutex for collision safety and then free hashtable mutex
-                pthread_mutex_lock(&send_and_hash_mutex);
-                    if (!shared_req->resolved) {
-                        if ((write(shared_req->sd, res.bytes, sizeof(uint64_t))) == -1) {
-                            perror("[server][!] write() failed");
-                            exit(-1);
+                    // mutex for collision safety and then free hashtable mutex
+                    pthread_mutex_lock(&send_and_hash_mutex);
+                        if (!shared_req->resolved) {
+                            if ((write(shared_req->sd, res.bytes, sizeof(uint64_t))) == -1) {
+                                perror("[server][!] write() failed");
+                                exit(-1);
+                            }
+
+                            close(shared_req->sd);
+
+                            // semaphore here?                         
+                            htable_set(ht, guess_hash, res.num);
+
+                            shared_req->resolved = true;
                         }
-
-                        close(shared_req->sd);
-
-                        // semaphore here?                         
-                        htable_set(ht, guess_hash, res.num);
-
-                        shared_req->resolved = true;
-                    }
-                pthread_mutex_unlock(&send_and_hash_mutex);
+                    pthread_mutex_unlock(&send_and_hash_mutex);
+                }
             }
 
             if (++num == range_end)
@@ -188,6 +190,14 @@ void launch_server_II(struct Server *server, int nthreads)
     }
 
     init_workers(tp, buffer, nthreads);
+    
+    
+    
+    // request_t req = decode_req(conn_sd, buffer); 
+    // display_request(buffer, req);
+    
+    
+    
 
     preq = decode_preq(conn_sd, buffer);
 
@@ -206,6 +216,9 @@ void launch_server_II(struct Server *server, int nthreads)
             perror("[server][!] read() failed");
             exit(-1);
         }
+
+        // request_t req = decode_req(conn_sd, buffer); 
+        // display_request(buffer, req);
 
         // TODO: could split it up, so we return the hashed request after reading the hash and dont bother with the additional info
         preq = decode_preq(conn_sd, buffer);
