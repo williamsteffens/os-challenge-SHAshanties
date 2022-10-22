@@ -32,13 +32,18 @@ typedef struct init {
 
 pthread_barrier_t barrier_0;
 pthread_barrier_t barrier_1;
+pthread_barrier_t barrier_panic;
 pthread_mutex_t queue_mutex_II = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t send_and_hash_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t queue_cond_var_II = PTHREAD_COND_INITIALIZER;
 pthread_cond_t hash_cond_var = PTHREAD_COND_INITIALIZER;
 htable_t *ht;
 
+bool panic_mode;
+bool skipped_last; 
+
 request_t *shared_req;
+request_t *panic_req;
 
 
 
@@ -71,7 +76,6 @@ void worker(void *arg)
     free(setup);
 
     uint8_t     guess_hash[SHA256_DIGEST_LENGTH];
-    request_t  *panic_req;
     response_t  res = {0};
     // TODO: do a lap and if it was not resolved wait?
     unsigned long entered_at = 0; 
@@ -94,16 +98,58 @@ void worker(void *arg)
 
         pthread_barrier_wait(&barrier_1);
 
-        if (num = range_start)
+        if (num == range_start)
             entered_at = range_end;
         else 
             entered_at = num - 1;
-    
-        // if (panic_mode) {
-        //     panic_req
-        // }
         
+
         while (!shared_req->resolved && num != entered_at) {
+            if (panic_mode) {
+                unsigned long panic_num = num;
+                unsigned long panic_entered_at;
+                if (panic_num == range_start)
+                    panic_entered_at = range_end;
+                else 
+                    panic_entered_at = panic_num - 1;
+
+
+                while (panic_mode && panic_num != panic_entered_at) {
+                    res.num = panic_req->start + panic_num;
+
+                    SHA256(res.bytes, sizeof(uint64_t), guess_hash);
+                    if (panic_req->hash[0] == guess_hash[0]) {
+                        if (memcmp(panic_req->hash, guess_hash, SHA256_DIGEST_LENGTH) == 0) {
+                            res.num = htobe64(res.num);
+
+                            // mutex for collision safety and then free hashtable mutex
+                            pthread_mutex_lock(&send_and_hash_mutex);
+                                if (!panic_req->resolved) {
+                                    if ((write(panic_req->sd, res.bytes, sizeof(uint64_t))) == -1) {
+                                        perror("[server][!] write() failed");
+                                        exit(-1);
+                                    }
+
+                                    close(panic_req->sd);
+
+                                    // semaphore here?                         
+                                    htable_set(ht, guess_hash, res.num);
+                                    pthread_cond_signal(&hash_cond_var);
+
+                                    panic_mode = false;
+                                }
+                            pthread_mutex_unlock(&send_and_hash_mutex);
+                        }
+                    }
+
+                    if (++panic_num == range_end)
+                        panic_num = range_start;
+                }
+
+                //printf("[server][t:%d] I'm waiting in panic.\n", id);
+                pthread_barrier_wait(&barrier_panic);
+            }
+        
             res.num = shared_req->start + num;
 
             SHA256(res.bytes, sizeof(uint64_t), guess_hash);
@@ -172,10 +218,12 @@ void launch_server_II(struct Server *server, int nthreads)
     // TODO: check attributes
     pthread_barrier_init(&barrier_0, NULL, nthreads);
     pthread_barrier_init(&barrier_1, NULL, nthreads);
+    pthread_barrier_init(&barrier_panic, NULL, nthreads);
 
     request_t *preq;
     shared_req = malloc(sizeof(request_t));
     shared_req = NULL;
+    panic_req = malloc(sizeof(request_t));
 
 
     // 1. request for determining range
@@ -242,8 +290,16 @@ void launch_server_II(struct Server *server, int nthreads)
             continue; 
         } 
         else {
-            htable_set(ht, preq->hash, 0);
-            submit_req(preq);
+            if (preq->prio > 2 && !skipped_last) {
+                panic_req = preq;
+                panic_mode = true;
+                skipped_last = true; 
+            }
+            else {
+                htable_set(ht, preq->hash, 0);
+                skipped_last = false; 
+                submit_req(preq);
+            }
         }
 
         // if (req.prio >= 2) {
