@@ -19,6 +19,22 @@ request_t decode_req(int req_socket, uint8_t buffer[PACKET_REQUEST_SIZE])
     return req;
 }
 
+request_t *decode_preq(int req_socket, uint8_t buffer[PACKET_REQUEST_SIZE])
+{
+    request_t *preq = malloc(sizeof(request_t));
+    
+    preq->sd = req_socket;
+    memcpy(&preq->hash, buffer + PACKET_REQUEST_HASH_OFFSET, SHA256_DIGEST_LENGTH);
+    memcpy(&preq->start, buffer + PACKET_REQUEST_START_OFFSET, 8);
+    memcpy(&preq->end, buffer + PACKET_REQUEST_END_OFFSET, 8);
+    preq->start = be64toh(preq->start);
+    preq->end = be64toh(preq->end);
+    preq->prio = buffer[PACKET_REQUEST_PRIO_OFFSET];
+    preq->resolved = false; 
+
+    return preq;    
+}
+
 void display_request(uint8_t buffer[PACKET_REQUEST_SIZE], request_t req)
 {
     memcpy(&req.hash, buffer + PACKET_REQUEST_HASH_OFFSET, SHA256_DIGEST_LENGTH);

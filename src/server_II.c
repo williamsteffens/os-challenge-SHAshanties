@@ -9,6 +9,8 @@
 #include <unistd.h>
 #include <errno.h>
 
+#include <sched.h>
+
 #include <sys/types.h>
 #include <sys/syscall.h>
 #include "server.h"
@@ -31,6 +33,7 @@ typedef struct init {
 pthread_barrier_t barrier_0;
 pthread_barrier_t barrier_1;
 pthread_mutex_t queue_mutex_II = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t send_and_hash_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t queue_cond_var_II = PTHREAD_COND_INITIALIZER;
 htable_t *ht;
 
@@ -50,20 +53,8 @@ long get_range(uint8_t buffer[PACKET_REQUEST_SIZE])
     return end - start;
 }
 
-void submit_req(int sd, uint8_t buffer[PACKET_REQUEST_SIZE])
+void submit_req(request_t *preq)
 {
-    request_t *preq = malloc(sizeof(request_t));
-    preq->sd = sd;
-
-    memcpy(&preq->hash, buffer + PACKET_REQUEST_HASH_OFFSET, SHA256_DIGEST_LENGTH);
-    memcpy(&preq->start, buffer + PACKET_REQUEST_START_OFFSET, 8);
-    memcpy(&preq->end, buffer + PACKET_REQUEST_END_OFFSET, 8);
-
-    preq->start = be64toh(preq->start);
-    preq->end = be64toh(preq->end);
-
-    preq->resolved = false; 
-
     pthread_mutex_lock(&queue_mutex_II);
         enqueue_req(preq);
         pthread_cond_signal(&queue_cond_var_II);
@@ -87,7 +78,6 @@ void worker(void *arg)
 
     unsigned long num = range_start; 
     for (;;) {
-        printf("[server][t:%d] Waiting at barrier_0...\n", id);
         pthread_barrier_wait(&barrier_0);
             
         if (id == 0) {
@@ -103,43 +93,40 @@ void worker(void *arg)
             pthread_mutex_unlock(&queue_mutex_II);
         }
 
-        printf("[server][t:%d] Waiting at barrier_1...\n", id);
         pthread_barrier_wait(&barrier_1);
 
-        entered_at = num;
+        if (num = range_start)
+            entered_at = range_end;
+        else 
+            entered_at = num - 1;
     
         // if (panic_mode) {
         //     panic_req
         // }
-
-        // maybe a while loop here? might be the same as just going around in the infinite for loop
         
-        
-        //printf("%lu, t: %d\n", res.num, id);
-
-        while (!shared_req->resolved) {
+        while (!shared_req->resolved && num != entered_at) {
             res.num = shared_req->start + num;
 
             SHA256(res.bytes, sizeof(uint64_t), guess_hash);
             if (memcmp(shared_req->hash, guess_hash, SHA256_DIGEST_LENGTH) == 0) {
                 res.num = htobe64(res.num);
 
-                // mutex for collision safety and then free hashtable mutex:)
-                printf("here\n");
-                if (!shared_req->resolved) {
-                    if ((write(shared_req->sd, res.bytes, sizeof(uint64_t))) == -1) {
-                        perror("[server][!] write() failed");
-                        exit(-1);
+                // mutex for collision safety and then free hashtable mutex
+                pthread_mutex_lock(&send_and_hash_mutex);
+                    if (!shared_req->resolved) {
+                        if ((write(shared_req->sd, res.bytes, sizeof(uint64_t))) == -1) {
+                            perror("[server][!] write() failed");
+                            exit(-1);
+                        }
+
+                        close(shared_req->sd);
+
+                        // semaphore here?                         
+                        htable_set(ht, guess_hash, res.num);
+
+                        shared_req->resolved = true;
                     }
-                    printf("[t:%d] found it.\n",id);
-
-                    close(shared_req->sd);
-                    
-                    // mutex here or from the outer one
-                    htable_set(ht, guess_hash, res.num);
-
-                    shared_req->resolved = true;
-                }
+                pthread_mutex_unlock(&send_and_hash_mutex);
             }
 
             if (++num == range_end)
@@ -183,6 +170,7 @@ void launch_server_II(struct Server *server, int nthreads)
     pthread_barrier_init(&barrier_0, NULL, nthreads);
     pthread_barrier_init(&barrier_1, NULL, nthreads);
 
+    request_t *preq;
     shared_req = malloc(sizeof(request_t));
 
 
@@ -201,8 +189,9 @@ void launch_server_II(struct Server *server, int nthreads)
 
     init_workers(tp, buffer, nthreads);
 
-    submit_req(conn_sd, buffer);
-    printf("req available\n");
+    preq = decode_preq(conn_sd, buffer);
+
+    submit_req(preq);
 
     // >1 requests
     for (;;) {
@@ -218,11 +207,30 @@ void launch_server_II(struct Server *server, int nthreads)
             exit(-1);
         }
 
+        // TODO: could split it up, so we return the hashed request after reading the hash and dont bother with the additional info
+        preq = decode_preq(conn_sd, buffer);
+
+        if (htable_contains_key(ht, preq->hash)) {
+            uint64_t ans = htable_get(ht, preq->hash);
+
+            // if (ans == 0)
+            //     printf("cum\n");
+            // else {
+                if ((write(conn_sd, &ans, sizeof(uint64_t))) == -1) {
+                    perror("[server][!] write() failed");
+                    exit(-1);
+                }
+            // }
+            
+            continue; 
+        } 
+        else {
+            //htable_set(ht, preq->hash, 0);
+            submit_req(preq);
+        }
 
         // if (req.prio >= 2) {
         //     enter panic mode
         // }
-
-        submit_req(conn_sd, buffer);
     }
 }

@@ -43,4 +43,5 @@ typedef union response {
 
 
 request_t decode_req(int req_socket, uint8_t buffer[PACKET_REQUEST_SIZE]);
+request_t *decode_preq(int req_socket, uint8_t buffer[PACKET_REQUEST_SIZE]);
 void display_request(uint8_t buffer[PACKET_REQUEST_SIZE], request_t req);

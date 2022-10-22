@@ -16,10 +16,10 @@ TARGET = server
 
 
 $(ODIR)/$(SDIR)/%.o: $(SDIR)/%.c $(DEPS)
-	$(CC) $(OPT) -c -o $@ $< $(CFLAGS) -g
+	$(CC) $(OPT) -c -o $@ $< $(CFLAGS)
 
 $(TARGET): $(OBJS)
-	$(CC) $(OPT) $(CFLAGS) -g -o $@ $^ $(LIBS)
+	$(CC) $(OPT) $(CFLAGS) -o $@ $^ $(LIBS)
 
 clean:
 	rm server -v
