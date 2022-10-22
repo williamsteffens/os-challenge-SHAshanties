@@ -35,6 +35,7 @@ pthread_barrier_t barrier_1;
 pthread_mutex_t queue_mutex_II = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t send_and_hash_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t queue_cond_var_II = PTHREAD_COND_INITIALIZER;
+pthread_cond_t hash_cond_var = PTHREAD_COND_INITIALIZER;
 htable_t *ht;
 
 request_t *shared_req;
@@ -81,11 +82,9 @@ void worker(void *arg)
         pthread_barrier_wait(&barrier_0);
             
         if (id == 0) {
-            // if (*shared_req != NULL) {
-            //     free((*shared_req)->resolved);
-            //     // TODO: should we free the request here or what? We want to keeps it yes keeps it for ourself!
-            //     // maybe a temp pointer free?
-            // }
+            if (shared_req != NULL) {
+                free(shared_req);
+            }
             
             pthread_mutex_lock(&queue_mutex_II);
                 while ((shared_req = dequeue_req()) == NULL)
@@ -124,6 +123,8 @@ void worker(void *arg)
 
                             // semaphore here?                         
                             htable_set(ht, guess_hash, res.num);
+                            pthread_cond_signal(&hash_cond_var);
+
 
                             shared_req->resolved = true;
                         }
@@ -174,6 +175,7 @@ void launch_server_II(struct Server *server, int nthreads)
 
     request_t *preq;
     shared_req = malloc(sizeof(request_t));
+    shared_req = NULL;
 
 
     // 1. request for determining range
@@ -223,22 +225,24 @@ void launch_server_II(struct Server *server, int nthreads)
         // TODO: could split it up, so we return the hashed request after reading the hash and dont bother with the additional info
         preq = decode_preq(conn_sd, buffer);
 
-        if (htable_contains_key(ht, preq->hash)) {
-            uint64_t ans = htable_get(ht, preq->hash);
 
-            // if (ans == 0)
-            //     printf("cum\n");
-            // else {
-                if ((write(conn_sd, &ans, sizeof(uint64_t))) == -1) {
-                    perror("[server][!] write() failed");
-                    exit(-1);
-                }
-            // }
+        // TODO: do we need a mutex here for the hashtable? 
+        if (htable_contains_key(ht, preq->hash)) {
+            pthread_mutex_lock(&send_and_hash_mutex);
+            while (htable_get(ht, preq->hash) == 0)
+                pthread_cond_wait(&hash_cond_var, &send_and_hash_mutex);
+            pthread_mutex_unlock(&send_and_hash_mutex);
+
+            uint64_t ans = htable_get(ht, preq->hash);
+            if ((write(conn_sd, &ans, sizeof(uint64_t))) == -1) {
+                perror("[server][!] write() failed");
+                exit(-1);
+            }
             
             continue; 
         } 
         else {
-            //htable_set(ht, preq->hash, 0);
+            htable_set(ht, preq->hash, 0);
             submit_req(preq);
         }
 
