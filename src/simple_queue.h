@@ -21,9 +21,17 @@ typedef struct task_node {
     struct task_node *next;
 } task_node_t; 
 
+typedef struct req_node {
+    request_t       *req;
+    struct req_node *next;
+} req_node_t;
+
 
 void enqueue(int *conn_sd);
 int *dequeue();
 
 void enqueue_task(task_t *ptask);
 task_t *dequeue_task();
+
+void enqueue_req(request_t *preq);
+request_t *dequeue_req();

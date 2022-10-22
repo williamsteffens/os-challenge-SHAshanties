@@ -11,6 +11,7 @@
 #endif
 
 #include <openssl/sha.h>
+#include <stdbool.h>
 
 
 
@@ -26,19 +27,20 @@
 
 
 typedef struct request {
-  int sd;
-  uint8_t hash[SHA256_DIGEST_LENGTH];
+  int      sd;
+  uint8_t  hash[SHA256_DIGEST_LENGTH];
   uint64_t start;
   uint64_t end;
-  uint8_t prio;
+  uint8_t  prio;
+  bool     resolved;
 } request_t;
 
 typedef union response {
   uint64_t num;
-  uint8_t bytes[8];
+  uint8_t  bytes[8];
 } response_t; 
 
 
 
 request_t decode_req(int req_socket, uint8_t buffer[PACKET_REQUEST_SIZE]);
-void display_request(char buffer[PACKET_REQUEST_SIZE], request_t req);
+void display_request(uint8_t buffer[PACKET_REQUEST_SIZE], request_t req);

@@ -19,7 +19,7 @@ request_t decode_req(int req_socket, uint8_t buffer[PACKET_REQUEST_SIZE])
     return req;
 }
 
-void display_request(char buffer[PACKET_REQUEST_SIZE], request_t req)
+void display_request(uint8_t buffer[PACKET_REQUEST_SIZE], request_t req)
 {
     memcpy(&req.hash, buffer + PACKET_REQUEST_HASH_OFFSET, SHA256_DIGEST_LENGTH);
     memcpy(&req.start, buffer + PACKET_REQUEST_START_OFFSET, 8);

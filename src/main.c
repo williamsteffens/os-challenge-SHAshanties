@@ -6,6 +6,7 @@
 #include "epoll_server.h"
 #include "threaded_server.h"
 #include "server_I.h"
+#include "server_II.h"
 
 
 
@@ -20,8 +21,10 @@ int main(int argc, char *argv[])
     short port = (unsigned short) atoi(argv[1]);
 
     struct Server server = server_constructor(AF_INET, SOCK_STREAM, 0, INADDR_ANY, port, 1000, BLOCKING);
-    launch_server_I(&server, 4, 4);
+    //launch_server_I(&server, 4, 4);
     
+    launch_server_II(&server, 4);
+
     //launch_epoll_server(&server);
     //launch_poll_server(&server);
     //launch_select_server(&server);

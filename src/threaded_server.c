@@ -447,8 +447,6 @@ void coordinator(int listen_socket, int ntasks)
             sumbit_task(conn_sd, req.hash, req.start + i * chunk, req.start + (i + 1) * chunk, pdone);
         }
         sumbit_task(conn_sd, req.hash, req.start + (ntasks - 1) * chunk, req.end, pdone);
-
-        // increase this and make it randomly choosen from the task queue
     }
 
 }

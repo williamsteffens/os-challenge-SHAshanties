@@ -1,7 +1,7 @@
 CC = gcc
 OPT = -O0
 CFLAGS = 
-LIBS = -I/opt/ssl/include/ -L/opt/ssl/lib/ -lcrypto -pthread
+LIBS = -I /opt/ssl/include/ -L /opt/ssl/lib/ -lcrypto -pthread
 
 SDIR = src
 ODIR = obj
@@ -16,10 +16,10 @@ TARGET = server
 
 
 $(ODIR)/$(SDIR)/%.o: $(SDIR)/%.c $(DEPS)
-	$(CC) $(OPT) -c -o $@ $< $(CFLAGS)
+	$(CC) $(OPT) -c -o $@ $< $(CFLAGS) -g
 
 $(TARGET): $(OBJS)
-	$(CC) $(OPT) $(CFLAGS) -o $@ $^ $(LIBS)
+	$(CC) $(OPT) $(CFLAGS) -g -o $@ $^ $(LIBS)
 
 clean:
 	rm server -v
