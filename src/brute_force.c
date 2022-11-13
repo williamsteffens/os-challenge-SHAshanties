@@ -38,7 +38,7 @@ void brute_force_SHA(int conn_sd)
     bzero(buffer, PACKET_REQUEST_SIZE);
     if ((read(conn_sd, buffer, PACKET_REQUEST_SIZE)) == -1) {
         perror("[server] read() failed");
-    exit(-1);
+        exit(-1);
     }
 
     // Zerolize vars
