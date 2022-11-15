@@ -82,4 +82,6 @@ void brute_force_SHA(int conn_sd)
         exit(-1);
     }
 
+    // Close the connection when done
+    close(conn_sd);
 }

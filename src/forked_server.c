@@ -33,3 +33,32 @@ void launch_fork_per_req_server(struct Server *server)
         }
     }
 }
+
+void launch_preforked_server(struct Server *server, short nprocesses)
+{
+    int conn_sd, socklen;
+    pid_t pid;
+    struct sockaddr_in cli_addr;
+    socklen = sizeof(cli_addr);
+
+    for (int i = 0; i < nprocesses; ++i) {
+        if ((pid = fork()) < 0) {
+            perror("[server][!] fork() failed");
+            exit(-1);
+        }
+
+        if (pid == 0) {
+            for (;;) {
+                if ((conn_sd = accept(server->socket, (struct sockaddr *)&cli_addr, &socklen)) < 0) {
+                    perror("[server][!] accept() failed");
+                    close(conn_sd);
+                    exit(-1);
+                }
+
+                brute_force_SHA(conn_sd);
+            }
+        }
+    }
+
+    pause();
+}

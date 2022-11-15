@@ -36,9 +36,9 @@ pthread_cond_t queue_cond_var = PTHREAD_COND_INITIALIZER;
 void coordinator(int listen_socket, int ntasks);
 void coordinator_II(int listen_socket, int nthreads, int ntasks);
 
-void* brute_force_SHA_threaded_v1(void* p_conn_sd);
-void* brute_force_SHA_threaded_pool_busy_worker();
-void* brute_force_SHA_threaded_pool_worker();
+void* brute_force_SHA_threaded(void* pconn_sd);
+void* brute_force_SHA_thread_pool_busy_worker();
+void* brute_force_SHA_thread_pool_worker();
 void* worker_thread();
 
 
@@ -71,62 +71,23 @@ void launch_thread_per_client_server(struct Server *server)
             close(conn_sd);
         }
 
-        pthread_t t;
-        pthread_create(&t, NULL, brute_force_SHA_threaded_v1, &conn_sd);
-    }
-}
-
-void launch_thread_per_client_innate_prio_server(struct Server *server)
-{
-    int conn_sd, socklen;
-    struct sockaddr_in cli_addr;
-    socklen = sizeof(cli_addr);
-
-    for (;;) {
-        if ((conn_sd = accept(server->socket, (struct sockaddr *)&cli_addr, &socklen)) < 0) {
-            printf("[server][!] accept() failed \n");
-            close(conn_sd);
-        }
-        // TODO: set the prio of the threads
-        pthread_t t;
-        pthread_create(&t, NULL, brute_force_SHA_threaded_v1, &conn_sd);
-    }
-}
-
-void launch_thread_pool_busy_wait_server(struct Server *server)
-{
-    int conn_sd, socklen;
-    struct sockaddr_in cli_addr;
-    socklen = sizeof(cli_addr);
-
-    pthread_t thread_pool[4];
-    for (int i = 0; i < 4; ++i)
-        pthread_create(&thread_pool[i], NULL, brute_force_SHA_threaded_pool_busy_worker, NULL);
-
-    for (;;) {
-        if ((conn_sd = accept(server->socket, (struct sockaddr *)&cli_addr, &socklen)) < 0) {
-            printf("[server][!] accept() failed \n");
-            close(conn_sd);
-        }
-
         int *pconn = malloc(sizeof(int));
         *pconn = conn_sd;
 
-        pthread_mutex_lock(&queue_mutex);
-        enqueue(pconn);
-        pthread_mutex_unlock(&queue_mutex);
+        pthread_t t;
+        pthread_create(&t, NULL, brute_force_SHA_threaded, pconn);
     }
 }
 
-void launch_thread_pool_server(struct Server *server)
+void launch_thread_pool_server(struct Server *server, int nthreads)
 {
     int conn_sd, socklen;
     struct sockaddr_in cli_addr;
     socklen = sizeof(cli_addr);
 
-    pthread_t thread_pool[4];
-    for (int i = 0; i < 4; ++i)
-        pthread_create(&thread_pool[i], NULL, brute_force_SHA_threaded_pool_worker, NULL);
+    pthread_t thread_pool[nthreads];
+    for (int i = 0; i < nthreads; ++i)
+        pthread_create(&thread_pool[i], NULL, brute_force_SHA_thread_pool_worker, NULL);
 
     for (;;) {
         if ((conn_sd = accept(server->socket, (struct sockaddr *)&cli_addr, &socklen)) < 0) {
@@ -138,13 +99,13 @@ void launch_thread_pool_server(struct Server *server)
         *pconn = conn_sd;
 
         pthread_mutex_lock(&queue_mutex);
-        enqueue(pconn);
+            enqueue(pconn);
         pthread_cond_signal(&queue_cond_var);
         pthread_mutex_unlock(&queue_mutex);
     }
 }
 
-void* brute_force_SHA_threaded_v1(void *pconn_sd)
+void* brute_force_SHA_threaded(void *pconn_sd)
 {
     int conn_sd = *((int*)pconn_sd);
     free(pconn_sd);
@@ -153,7 +114,7 @@ void* brute_force_SHA_threaded_v1(void *pconn_sd)
 
     bzero(buffer, PACKET_REQUEST_SIZE);
     if ((read(conn_sd, buffer, PACKET_REQUEST_SIZE)) == -1) {
-        perror("[server] read() failed");
+        perror("[server][!] read() failed");
         exit(-1);
     }
 
@@ -198,9 +159,71 @@ void* brute_force_SHA_threaded_v1(void *pconn_sd)
         exit(-1);
     }
 
+    // Close the connection when done
+    close(conn_sd);
 }
 
-void* brute_force_SHA_threaded_pool_busy_worker()
+void* brute_force_SHA_thread_pool_worker()
+{
+    int *pconn_sd;
+    pthread_detach(pthread_self());
+    
+    for (;;) {
+        pthread_mutex_lock(&queue_mutex);
+            while ((pconn_sd = dequeue()) == NULL) {
+                pthread_cond_wait(&queue_cond_var, &queue_mutex);
+            }
+        pthread_mutex_unlock(&queue_mutex);
+
+        brute_force_SHA_threaded(pconn_sd);
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void* brute_force_SHA_thread_pool_busy_worker()
 {
     int *pconn_sd;
     pthread_detach(pthread_self());
@@ -211,24 +234,33 @@ void* brute_force_SHA_threaded_pool_busy_worker()
         pthread_mutex_unlock(&queue_mutex);
 
         if (pconn_sd != NULL)
-            brute_force_SHA_threaded_v1(pconn_sd);
+            brute_force_SHA_threaded(pconn_sd);
     }
 }
 
-void* brute_force_SHA_threaded_pool_worker()
+
+void launch_thread_pool_busy_wait_server(struct Server *server)
 {
-    int *pconn_sd;
-    pthread_detach(pthread_self());
-    
-    for (;;) {
-        pthread_mutex_lock(&queue_mutex);
-        while ((pconn_sd = dequeue()) == NULL) {
-            //printf("\tthread %ld is waiting\n", pthread_self());
-            pthread_cond_wait(&queue_cond_var, &queue_mutex); // check that second parameter is what you think it is
-        }
-        pthread_mutex_unlock(&queue_mutex);
+    int conn_sd, socklen;
+    struct sockaddr_in cli_addr;
+    socklen = sizeof(cli_addr);
 
-        brute_force_SHA_threaded_v1(pconn_sd);
+    pthread_t thread_pool[4];
+    for (int i = 0; i < 4; ++i)
+        pthread_create(&thread_pool[i], NULL, brute_force_SHA_thread_pool_busy_worker, NULL);
+
+    for (;;) {
+        if ((conn_sd = accept(server->socket, (struct sockaddr *)&cli_addr, &socklen)) < 0) {
+            printf("[server][!] accept() failed \n");
+            close(conn_sd);
+        }
+
+        int *pconn = malloc(sizeof(int));
+        *pconn = conn_sd;
+
+        pthread_mutex_lock(&queue_mutex);
+        enqueue(pconn);
+        pthread_mutex_unlock(&queue_mutex);
     }
 }
 
@@ -236,15 +268,7 @@ void* brute_force_SHA_threaded_pool_worker()
 
 
 
-
-
-
-
-
-
-
-
-void launch_x_threads_one_client_server_many_tasks_in_order_server(struct Server *server, int nthreads)
+void launch_nthreads_one_client_server_many_tasks_in_order_server(struct Server *server, int nthreads)
 {
     
 }
@@ -311,7 +335,7 @@ void assign_work(tpool_t *tp, request_t req, int ntasks)
 
 }
 
-void launch_x_threads_one_client_server_many_tasks_server(struct Server *server, int nthreads)
+void launch_nthreads_one_client_server_many_tasks_server(struct Server *server, int nthreads)
 {
     coordinator_II(server->socket, nthreads, nthreads);
 }
@@ -400,7 +424,7 @@ void coordinator_II(int listen_socket, int nthreads, int ntasks)
 
 
 
-void launch_x_threads_one_client_server(struct Server *server, int nthreads)
+void launch_nthreads_one_client_server(struct Server *server, int nthreads)
 {
     pthread_t thread_pool[nthreads];
     for (int i = 0; i < nthreads; ++i)
