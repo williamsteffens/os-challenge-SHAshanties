@@ -9,11 +9,11 @@ typedef struct node {
 } node_t;
 
 typedef struct task {
+    int id; 
     int sd;
     uint8_t hash[SHA256_DIGEST_LENGTH];
     uint64_t start; 
     uint64_t end;
-    bool *done;
 } task_t;
 
 typedef struct task_node {

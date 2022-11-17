@@ -16,10 +16,9 @@ typedef struct bf_task {
 } bf_task_t;
 
 
-
 void launch_thread_per_client_server(struct Server *server);
 void launch_thread_pool_server(struct Server *server, int nthreads);
-
+void launch_split_req_thread_pool_server(struct Server *server, int nthreads);
 
 
 

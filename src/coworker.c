@@ -50,7 +50,7 @@ void* co_worker(void *arg)
         // accept() req and put up on req board
         pthread_mutex_lock(&accept_mutex);
             while (req_board[cnt] == NULL) {
-                if ((conn_sd = accept(server->socket, (struct sockaddr *)&cli_addr, &socklen)) < 0) {
+                if ((conn_sd = accept(server->socketfd, (struct sockaddr *)&cli_addr, &socklen)) < 0) {
                     perror("[server][!] accept() failed");
                     close(conn_sd);
                     exit(-1);
@@ -73,7 +73,11 @@ void* co_worker(void *arg)
                     }
 
                     continue;
-                }
+                } 
+                // else {
+                //     // SPAWN MONKE
+                //     htable_set
+                // }
 
                 memcpy(&req.start, buffer + PACKET_REQUEST_START_OFFSET, 8);
                 memcpy(&req.end, buffer + PACKET_REQUEST_END_OFFSET, 8);
@@ -135,9 +139,9 @@ void* co_worker(void *arg)
                 }
 
                 // "Take down" the req from the req_board and close the connection
-                pthread_mutex_lock(&accept_mutex);
+                //pthread_mutex_lock(&accept_mutex);
                     htable_set(ht, guess_hash, res.num);
-                pthread_mutex_unlock(&accept_mutex);
+                //pthread_mutex_unlock(&accept_mutex);
                 req_board[cnt]->resolved = true; 
                 close(req.sd);
                 break;
@@ -260,7 +264,7 @@ void* og_co_worker(void *arg)
         // accept() req and put up on req board
         pthread_mutex_lock(&accept_mutex);
             if (req_board[cnt] == NULL) {
-                if ((conn_sd = accept(server->socket, (struct sockaddr *)&cli_addr, &socklen)) < 0) {
+                if ((conn_sd = accept(server->socketfd, (struct sockaddr *)&cli_addr, &socklen)) < 0) {
                     perror("[server][!] accept() failed");
                     close(conn_sd);
                     exit(-1);

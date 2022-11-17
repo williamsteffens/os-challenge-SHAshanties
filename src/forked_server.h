@@ -4,3 +4,4 @@
 
 void launch_fork_per_req_server(struct Server *server);
 void launch_preforked_server(struct Server *server, short nprocesses);
+void launch_preforked_thread_pool_server(struct Server *server, short nprocesses, short nthreads);
