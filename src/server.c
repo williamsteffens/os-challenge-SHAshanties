@@ -52,11 +52,10 @@ struct Server server_constructor(int domain,
 
     // Set socket blocking mode
     if (block_mode == NONBLOCKING) {
-        fcntl(server.socketfd, F_SETFD, fcntl(server.socketfd, F_GETFD, 0) | O_NONBLOCK);
-        // if ((ioctl(server.socketfd, FIONBIO, (char *)&optVal)) < 0) {
-	    // 	perror("[server][!] (server_construtor) ioctl() failed");
-        //     exit(EXIT_FAILURE);
-	    // }
+        if ((ioctl(server.socketfd, FIONBIO, (char *)&optVal)) < 0) {
+	    	perror("[server][!] (server_construtor) ioctl() failed");
+            exit(EXIT_FAILURE);
+	    }
     }
 
     if ((listen(server.socketfd, server.backlog)) != 0) {

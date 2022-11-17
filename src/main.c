@@ -24,12 +24,11 @@ int main(int argc, char *argv[])
     // Second Argument should be port num
     short port = (unsigned short) atoi(argv[1]);
 
-    struct Server server = server_constructor(AF_INET, SOCK_STREAM, 0, INADDR_ANY, port, 1000, NONBLOCKING);
+    struct Server server = server_constructor(AF_INET, SOCK_STREAM, 0, INADDR_ANY, port, 1000, BLOCKING);
 
 
     //launch_co_worker_server(&server, 4);
     //launch_server_II(&server, 4);
-
 
     // Forked servers
     // ------------------------------

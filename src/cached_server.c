@@ -19,6 +19,8 @@
 #include "brute_force.h"
 #include "simple_queue.h"
 #include "hash_table.h"
+#include <pthread.h>
+#include <sched.h>
 
 
 pthread_mutex_t queue_mutex_cached = PTHREAD_MUTEX_INITIALIZER;
@@ -42,7 +44,14 @@ void launch_cached_split_req_thread_pool_server(struct Server *server, int nthre
     request_t req;
 
     // Set pthread attributes
-
+    // pthread_attr_t attr;
+    // int newprio = 99;
+    // sched_param param;
+    // int ret;
+    // ret = pthread_attr_init (&attr);
+    // ret = pthread_attr_getschedparam (&attr, &param);
+    // param.sched_priority = newprio;
+    // ret = pthread_attr_setschedparam (&attr, &param);
 
     // Create Thread Pool
     pthread_t thread_pool[nthreads];
@@ -55,7 +64,7 @@ void launch_cached_split_req_thread_pool_server(struct Server *server, int nthre
     // Server loop
     for (;;) {  
         if ((conn_sd = accept(server->socketfd, (struct sockaddr *)&cli_addr, &socklen)) < 0) {
-            perror("[server][!] accept() failed \n");
+            perror("[server][!] accept() failed");
             close(conn_sd);
         } 
 
@@ -66,7 +75,7 @@ void launch_cached_split_req_thread_pool_server(struct Server *server, int nthre
     
         bzero(buffer, PACKET_REQUEST_SIZE);
         if ((read(conn_sd, buffer, PACKET_REQUEST_SIZE)) == -1) {
-            perror("[server][!] read() failed\n");
+            perror("[server][!] read() failed");
             exit(-1);
         }
     
@@ -74,13 +83,12 @@ void launch_cached_split_req_thread_pool_server(struct Server *server, int nthre
         memcpy(&req.hash, buffer + PACKET_REQUEST_HASH_OFFSET, SHA256_DIGEST_LENGTH);
         
         // Check hashmap, send if cached
-        
         if (htable_contains_key(ht, req.hash)) { 
             pthread_mutex_lock(&htable_mutex);
                 uint64_t ans = htable_get(ht, req.hash);
             pthread_mutex_unlock(&htable_mutex);
             if ((write(conn_sd, &ans, sizeof(uint64_t))) == -1) {
-                perror("[server][!] write() failed\n");
+                perror("[server][!] write() failed");
                 exit(-1);
             }
 
@@ -142,17 +150,24 @@ void launch_cached_split_req_thread_pool_server(struct Server *server, int nthre
 
 void* thread_pool_worker_cached()
 {
+    pthread_detach(pthread_self());
     task_t *ptask;
     task_t task;
-    pthread_detach(pthread_self());
     uint8_t guess_hash[SHA256_DIGEST_LENGTH];
 
     for (;;) {
         pthread_mutex_lock(&queue_mutex_cached);
             while ((ptask = dequeue_task()) == NULL)
-                pthread_cond_wait(&queue_cond_var_cached
-            , &queue_mutex_cached);
+                pthread_cond_wait(&queue_cond_var_cached, &queue_mutex_cached);
         pthread_mutex_unlock(&queue_mutex_cached);
+
+        // Busy waiting
+        // pthread_mutex_lock(&queue_mutex_cached);
+        //     while ((ptask = dequeue_task()) == NULL) {
+        //         pthread_mutex_unlock(&queue_mutex_cached);
+        //         pthread_mutex_lock(&queue_mutex_cached);
+        //     }
+        // pthread_mutex_unlock(&queue_mutex_cached);
 
         task_t task = *ptask;
         free(ptask);
@@ -175,15 +190,18 @@ void* thread_pool_worker_cached()
             SHA256(res.bytes, sizeof(uint64_t), guess_hash);
             if (memcmp(task.hash, guess_hash, SHA256_DIGEST_LENGTH) == 0) {
                 res.num = htobe64(res.num);
+                
+                done_board[task.id] = true;
+
                 if ((write(task.sd, res.bytes, sizeof(uint64_t))) == -1) {
                     perror("[server][!] write() failed\n");
                     exit(-1);
                 }
 
-                done_board[task.id] = true;
                 pthread_mutex_lock(&htable_mutex);
                     htable_set(ht, guess_hash, res.num);
                 pthread_mutex_unlock(&htable_mutex);
+
                 close(task.sd);
                 break;
             }
