@@ -1,3 +1,6 @@
+#ifndef PRIORITY_QUEUE_REQ_H
+#define PRIORITY_QUEUE_REQ_H
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -6,10 +9,13 @@
 #include "request_queue.h"
 
 typedef struct priority_queue_req{
-    int size;
-    queue_req_t *queues;
+    //queue_req_t *queues;
+    queue_req_t *queues[16];
 }priority_queue_req_t;
 
-priority_queue_req_t init_pq(int size);
+/*
+priority_queue_req_t init_pq();
 void enqueue_pq(priority_queue_req_t pq, request_t *req);    
-request_t *dequeue_pq();
+request_t *dequeue_pq(priority_queue_req_t pq, int prio);
+*/
+#endif // PRIORITY_QUEUE_REQ_H

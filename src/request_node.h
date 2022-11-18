@@ -1,3 +1,6 @@
+#ifndef NODE_REQ_H
+#define NODE_REQ_H
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -8,3 +11,5 @@ typedef struct node_req{
     request_t *req;
     struct node_req *next;
 }node_req_t;
+
+#endif // NODE_REQ_H

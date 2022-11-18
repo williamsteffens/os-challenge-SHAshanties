@@ -9,7 +9,7 @@
 #include "server_II.h"
 
 
-
+/*
 int main(int argc, char *argv[]) 
 {
     if (argc != 2) {
@@ -35,3 +35,4 @@ int main(int argc, char *argv[])
     //launch_x_threads_one_client_server(&server, 4);
     //launch_x_threads_one_client_server_many_tasks_server(&server, 4); // sysconf(_SC_NPROCESSORS_CONF)
 }
+*/

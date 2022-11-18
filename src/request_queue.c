@@ -1,3 +1,6 @@
+#ifndef QUEUE_REQ_C
+#define QUEUE_REQ_C
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -5,9 +8,9 @@
 #include "request_node.h"
 #include "request_queue.h"
 
-void enqueue_req(queue_req_t q, request_t *req){
-    q.head;
-    q.tail;
+void enqueue_request(queue_req_t q, request_t *req){
+    //q.head;
+    //q.tail;
     node_req_t *new_node = malloc(sizeof(node_req_t));
     new_node->req = req;
     new_node->next = NULL;
@@ -20,7 +23,7 @@ void enqueue_req(queue_req_t q, request_t *req){
     q.tail = new_node;    
 }
 
-request_t *dequeue_req(queue_req_t q){
+request_t *dequeue_request(queue_req_t q){
     if(q.head == NULL){
         return NULL;
     }
@@ -36,3 +39,5 @@ request_t *dequeue_req(queue_req_t q){
     free(temp);
     return result;
 }
+
+#endif // QUEUE_REQ_C
