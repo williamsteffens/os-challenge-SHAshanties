@@ -1,10 +1,19 @@
+#define _GNU_SOURCE 
+
 #include "os-challenge-util.h"
 #include "server.h"
 #include "brute_force.h"
 #include "simple_queue.h"
 
-pthread_mutex_t queue_mutex_fork = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t queue_cond_var_fork = PTHREAD_COND_INITIALIZER;
+#include <assert.h>
+#include <sched.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+
+
 
 void launch_fork_per_req_server(struct Server *server)
 {

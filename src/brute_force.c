@@ -21,15 +21,6 @@
 
 
 
-
-int hashMatches(uint8_t hash[SHA256_DIGEST_LENGTH], uint8_t guessHash[SHA256_DIGEST_LENGTH])
-{
-   if (memcmp(hash, guessHash, SHA256_DIGEST_LENGTH) == 0)
-      return 1;
-   else 
-      return 0;
-}
-
 void brute_force_SHA(int conn_sd) 
 {
     uint8_t buffer[PACKET_REQUEST_SIZE];
@@ -66,11 +57,11 @@ void brute_force_SHA(int conn_sd)
     #endif 
 
     // Brute force
-    uint8_t guessHash[SHA256_DIGEST_LENGTH];
+    uint8_t guess_hash[SHA256_DIGEST_LENGTH];
     response_t res = {0};
     for (res.num = req.start; res.num < req.end; ++res.num) {
-        SHA256(res.bytes, sizeof(uint64_t), guessHash);
-        if (hashMatches(req.hash, guessHash)) {
+        SHA256(res.bytes, sizeof(uint64_t), guess_hash);
+        if (memcmp(req.hash, guess_hash, SHA256_DIGEST_LENGTH) == 0) {
             res.num = htobe64(res.num);
             break;
         }

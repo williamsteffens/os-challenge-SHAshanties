@@ -41,8 +41,8 @@ typedef union response {
 } response_t; 
 
 
-
-bool sha_cmp(uint8_t hash[SHA256_DIGEST_LENGTH], uint8_t guess_hash[SHA256_DIGEST_LENGTH]);
 request_t decode_req(int req_socket, uint8_t buffer[PACKET_REQUEST_SIZE]);
+
 request_t *decode_preq(int req_socket, uint8_t buffer[PACKET_REQUEST_SIZE]);
+
 void display_request(uint8_t buffer[PACKET_REQUEST_SIZE], request_t req);

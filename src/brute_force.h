@@ -18,5 +18,5 @@
 #include <pthread.h>
 
 
+
 void brute_force_SHA(int conn_sd);
-int hashMatches(uint8_t hash[SHA256_DIGEST_LENGTH], uint8_t guessHash[SHA256_DIGEST_LENGTH]);

@@ -1,7 +1,3 @@
-/*
-Hash Table Implementation - source file
-*/
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -15,7 +11,6 @@ Hash Table Implementation - source file
 
 #include "hash_table.h"
 
-// TODO: this matches the total amount of reverse hashing requests from client-final
 #define TABLE_SIZE 1000
 
 
@@ -55,8 +50,6 @@ htable_t *create_htable()
 
 void htable_set(htable_t *table, uint8_t* key, uint64_t val)
 {
-    // TODO: Insert at the beginning of the list instead, to improve the access time
-
     int index = hash(key);
     entry_t *entry = table->entries[index];
 

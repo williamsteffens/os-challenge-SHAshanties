@@ -1,3 +1,6 @@
+#define _GNU_SOURCE 
+#define DEBUG 0
+
 #include <stdio.h>
 #include <string.h>
 #include <openssl/sha.h>
@@ -12,7 +15,7 @@
 #include <stdlib.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
-
+#include <math.h>
 
 #include "os-challenge-util.h"
 #include "server.h"
@@ -21,16 +24,25 @@
 #include "hash_table.h"
 #include <pthread.h>
 #include <sched.h>
+#include "threaded_server.h"
+#include "cached_server.h"
+#include "split_request_server.h"
+#include <sched.h>
+#include <sys/wait.h>
 
 
-pthread_mutex_t queue_mutex_cached = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t htable_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t queue_cond_var_cached = PTHREAD_COND_INITIALIZER;
+#include <assert.h>
+#include <sched.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 
-bool done_board[1000];
+
 htable_t *ht;
 
-void* thread_pool_worker_cached();
+
+void *thread_pool_worker_cached();
 
 
 void launch_cached_split_req_thread_pool_server(struct Server *server, int nthreads)
@@ -43,20 +55,27 @@ void launch_cached_split_req_thread_pool_server(struct Server *server, int nthre
     uint8_t buffer[PACKET_REQUEST_SIZE];
     request_t req;
 
+    pthread_mutex_init(&queue_mutex, NULL);
+    pthread_mutex_init(&htable_mutex, NULL);
+    pthread_cond_init(&queue_cond_var, NULL);
+
     // Set pthread attributes
-    // pthread_attr_t attr;
-    // int newprio = 99;
-    // sched_param param;
-    // int ret;
-    // ret = pthread_attr_init (&attr);
-    // ret = pthread_attr_getschedparam (&attr, &param);
-    // param.sched_priority = newprio;
-    // ret = pthread_attr_setschedparam (&attr, &param);
+    pthread_attr_t attr;
+    struct sched_param param;
+    pthread_attr_init(&attr);
+    pthread_attr_setschedpolicy(&attr, SCHED_FIFO);
+    // param.sched_priority = 30;
+    // pthread_attr_setschedparam(&attr, &param);
+    
+    // cpu_set_t set;
+    // CPU_ZERO(&set);
+    // CPU_SET(nthreads, &set);
+    // sched_setaffinity(getpid(), sizeof(set), &set);
 
     // Create Thread Pool
     pthread_t thread_pool[nthreads];
     for (int i = 0; i < nthreads; ++i)
-        pthread_create(&thread_pool[i], NULL, thread_pool_worker_cached, NULL);
+        pthread_create(&thread_pool[i], &attr, thread_pool_worker_cached, NULL);
 
     ht = create_htable();
 
@@ -114,41 +133,16 @@ void launch_cached_split_req_thread_pool_server(struct Server *server, int nthre
             printf("p:     %u\n", req.prio);
         #endif 
 
-        chunk = 1 + (((req.end - req.start) - 1) / nthreads); // ceil(range/nthreads)-ish --- NOTE THE -ISH
+        // if prio is high put it in here lol
 
-        for (int i = 0; i < nthreads - 1; ++i) {
-            task_t *ptask = malloc(sizeof(task_t));
-            ptask->id     = req_id;
-            ptask->sd     = conn_sd;
-            memcpy(&ptask->hash, req.hash, SHA256_DIGEST_LENGTH);
-            ptask->start  = req.start + i * chunk;
-            ptask->end    = req.start + (i + 1) * chunk;
-
-            // Enqueue the split request
-            pthread_mutex_lock(&queue_mutex_cached);
-                enqueue_task(ptask);
-            pthread_cond_signal(&queue_cond_var_cached);
-            pthread_mutex_unlock(&queue_mutex_cached);
-        }
-        task_t *ptask = malloc(sizeof(task_t));
-        ptask->id     = req_id;
-        ptask->sd     = conn_sd;
-        memcpy(&ptask->hash, req.hash, SHA256_DIGEST_LENGTH);
-        ptask->start  = req.start + (nthreads - 1) * chunk;
-        ptask->end    = req.end; 
-
-        // Enqueue the split request
-        pthread_mutex_lock(&queue_mutex_cached);
-            enqueue_task(ptask);
-        pthread_cond_signal(&queue_cond_var_cached);
-        pthread_mutex_unlock(&queue_mutex_cached); 
+        split_and_sumbit_task(nthreads, conn_sd, req_id, req.hash, req.start, req.end);
 
         // Inc req_id for next request
         ++req_id;
     }
 }
 
-void* thread_pool_worker_cached()
+void *thread_pool_worker_cached()
 {
     pthread_detach(pthread_self());
     task_t *ptask;
@@ -156,18 +150,18 @@ void* thread_pool_worker_cached()
     uint8_t guess_hash[SHA256_DIGEST_LENGTH];
 
     for (;;) {
-        pthread_mutex_lock(&queue_mutex_cached);
-            while ((ptask = dequeue_task()) == NULL)
-                pthread_cond_wait(&queue_cond_var_cached, &queue_mutex_cached);
-        pthread_mutex_unlock(&queue_mutex_cached);
+        // pthread_mutex_lock(&queue_mutex);
+        //     while ((ptask = dequeue_task()) == NULL)
+        //         pthread_cond_wait(&queue_cond_var, &queue_mutex);
+        // pthread_mutex_unlock(&queue_mutex);
 
         // Busy waiting
-        // pthread_mutex_lock(&queue_mutex_cached);
-        //     while ((ptask = dequeue_task()) == NULL) {
-        //         pthread_mutex_unlock(&queue_mutex_cached);
-        //         pthread_mutex_lock(&queue_mutex_cached);
-        //     }
-        // pthread_mutex_unlock(&queue_mutex_cached);
+        pthread_mutex_lock(&queue_mutex);
+            while ((ptask = dequeue_task()) == NULL) {
+                pthread_mutex_unlock(&queue_mutex);
+                pthread_mutex_lock(&queue_mutex);
+            }
+        pthread_mutex_unlock(&queue_mutex);
 
         task_t task = *ptask;
         free(ptask);

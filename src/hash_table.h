@@ -1,13 +1,6 @@
 #pragma once 
 
-/*
-Hash Table Implementation - header file
-*/
-
 #include <stdbool.h>
-
-// TODO: this matches the total amount of reverse hashing requests from client-final
-
 
 
 typedef struct entry_t {
@@ -18,8 +11,6 @@ typedef struct entry_t {
 
 typedef struct {
     entry_t** entries;
-    // TODO: Maybe add this back in, looks better imo
-    // int size;
 } htable_t; 
 
 
@@ -33,8 +24,6 @@ uint64_t htable_get(htable_t* table, uint8_t* key);
 void htable_delete(htable_t* table, uint8_t* key);
 
 bool htable_contains_key(htable_t* table, uint8_t* key);
-
-
 
 void htable_dump(htable_t* table);
 

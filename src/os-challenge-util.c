@@ -6,10 +6,6 @@
 
 
 
-bool sha_cmp(uint8_t hash[SHA256_DIGEST_LENGTH], uint8_t guess_hash[SHA256_DIGEST_LENGTH]) 
-{
-    return hash[0] == guess_hash[0] ? memcmp(hash,guess_hash,SHA256_DIGEST_LENGTH) : 1;
-}
 
 request_t decode_req(int req_socket, uint8_t buffer[PACKET_REQUEST_SIZE])
 {

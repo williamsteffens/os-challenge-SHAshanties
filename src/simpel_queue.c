@@ -64,34 +64,3 @@ task_t *dequeue_task()
     free(temp);
     return result; 
 }
-
-
-req_node_t *head_req = NULL; 
-req_node_t *butt_req = NULL; 
-
-void enqueue_req(request_t *preq) 
-{
-    req_node_t *newnode = malloc(sizeof(req_node_t));
-    newnode->req = preq;
-    newnode->next = NULL;
-    if (butt_req == NULL)
-        head_req = newnode;
-    else 
-        butt_req->next = newnode;
-    
-    butt_req = newnode;
-}
-
-request_t *dequeue_req() 
-{
-    if (head_req == NULL)
-        return NULL;
-
-    request_t *result = head_req->req;
-    req_node_t *temp = head_req; 
-    head_req = head_req->next;
-    if (head_req == NULL)
-        butt_req = NULL;
-    free(temp);
-    return result; 
-}
