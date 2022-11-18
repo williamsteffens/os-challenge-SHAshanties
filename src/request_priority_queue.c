@@ -22,13 +22,14 @@ void enqueue_pq(priority_queue_req_t *pq, request_t *req){
     printf("1?\n");
     int pos = req->prio;
     printf("pos: %d\n", pos);
-    enqueue_request(*(pq->queues[pos]), req);
+    enqueue_request(pq->queues[req->prio], req);
     printf("2?\n");
 }
-
-request_t *dequeue_pq(priority_queue_req_t pq, int prio){
+/*
+request_t *dequeue_pq(priority_queue_req_t *pq, int prio){
     return dequeue_request(*pq.queues[prio]);
 }
+*/
 
 // Driver code
 int main(void){
@@ -37,11 +38,36 @@ int main(void){
     req0->prio = 0; 
     req1->prio = 1;
 
-    priority_queue_req_t *pq = init_pq();   
+    queue_req_t *q = malloc(sizeof(queue_req_t));   
+
+    priority_queue_req_t *pq = init_pq();
 
     enqueue_pq(pq, req0);
-    
-    //printf("%u\n", req0->prio);
+
+    //queue_req functions work:
+    /*
+    enqueue_request(q, req0);
+    enqueue_request(q, req1);
+    printf("%p\n", (void *)&q);
+    printf("%p\n", (void *)&q->head);
+    printf("%p\n", (void *)&q->head->req);
+    printf("%p\n", (void *)&q->head->req->prio);
+    request_t *res1 = dequeue_request(q);
+    printf("%u\n", res1->prio);
+    printf("%p\n", (void *)&q);
+    printf("%p\n", (void *)&q->head);
+    printf("%p\n", (void *)&q->head->req);
+    printf("%p\n", (void *)&q->head->req->prio);
+    request_t *res2 = dequeue_request(q);
+    printf("%u\n", res2->prio);
+    printf("%p\n", (void *)&q);
+    printf("%p\n", (void *)&q->head);
+    printf("%p\n", (void *)&q->head->req);
+    printf("%p\n", (void *)&q->head->req->prio);
+    */
+
+    /*
+    printf("%u\n", req0->prio);
     printf("%p\n", (void *)&pq);
     printf("%p\n", (void *)&pq->queues[0]);
     printf("%p\n", (void *)&pq->queues[1]);
@@ -49,7 +75,7 @@ int main(void){
     printf("%p\n", (void *)&pq->queues[0]->head->req);
     printf("%p\n", (void *)&pq->queues[0]->head->req->prio);
     printf("Hallo?\n");
-    /*
+    
     printf("%d\n", &pq.queues[0]->head->req->prio);
     printf("%d\n", pq.queues[0]->head);
     printf("%d\n", pq.queues[0]);

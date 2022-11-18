@@ -8,32 +8,32 @@
 #include "request_node.h"
 #include "request_queue.h"
 
-void enqueue_request(queue_req_t q, request_t *req){
+void enqueue_request(queue_req_t *q, request_t *req){
     //q.head;
     //q.tail;
     node_req_t *new_node = malloc(sizeof(node_req_t));
     new_node->req = req;
     new_node->next = NULL;
 
-    if (q.tail == NULL)
-        q.head = new_node;
+    if (q->tail == NULL)
+        q->head = new_node;
     else 
-        q.tail->next = new_node;
+        q->tail->next = new_node;
     
-    q.tail = new_node;    
+    q->tail = new_node;    
 }
 
-request_t *dequeue_request(queue_req_t q){
-    if(q.head == NULL){
+request_t *dequeue_request(queue_req_t *q){
+    if(q->head == NULL){
         return NULL;
     }
 
-    request_t *result = q.head->req;
-    node_req_t *temp = q.head;
-    q.head = q.head->next;
+    request_t *result = q->head->req;
+    node_req_t *temp = q->head;
+    q->head = q->head->next;
     
-    if(q.head == NULL){
-        q.tail = NULL;
+    if(q->head == NULL){
+        q->tail = NULL;
     }
 
     free(temp);

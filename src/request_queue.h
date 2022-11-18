@@ -13,8 +13,8 @@ typedef struct queue_req{
     node_req_t *tail;
 }queue_req_t;
 
-void enqueue_request(queue_req_t q, request_t *req);
-request_t *dequeue_request(queue_req_t q);
+void enqueue_request(queue_req_t *q, request_t *req);
+request_t *dequeue_request(queue_req_t *q);
 
 
 #endif // QUEUE_REQ_H

@@ -10,7 +10,7 @@
 
 typedef struct priority_queue_req{
     //queue_req_t *queues;
-    queue_req_t *queues[16];
+    queue_req_t **queues;
 }priority_queue_req_t;
 
 /*
