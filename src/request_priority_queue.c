@@ -9,82 +9,94 @@
 #include "request_queue.h"
 #include "request_priority_queue.h"
 
-priority_queue_req_t *init_pq(){
-    // TODO: Need to check how to handle 16 queues exactly
-    //priority_queue_req_t pq;
-    //return pq;
-    priority_queue_req_t *pq = malloc(sizeof(priority_queue_req_t) + 16 * sizeof(queue_req_t));
-    return pq;
+void enqueue_queue(priority_queue_req_t *pq){
+    queue_req_t *new_queue = malloc(sizeof(queue_req_t));
+    
+    new_queue->next = NULL;
+    
+    // First queue has priority 1
+    if(pq->tail == NULL){
+        pq->head = new_queue;
+        new_queue->priority = 1;
+    }
+    // Following appended queues get priority of tail + 1
+    else{
+        pq->tail->next = new_queue;
+        new_queue->priority = pq->tail->priority + 1; 
+    }
+
+    // New queue becomes tail of priority queue
+    pq->tail = new_queue;       
 }
 
-// The request is inserted into a pq accordingly with priority
-void enqueue_pq(priority_queue_req_t *pq, request_t *req){
-    printf("1?\n");
-    int pos = req->prio;
-    printf("pos: %d\n", pos);
-    enqueue_request(pq->queues[req->prio], req);
-    printf("2?\n");
+void dequeue_queue(priority_queue_req_t *pq){
+    // If priority queue is empty
+    if(pq->head == NULL){
+        printf("The priority queue is empty!");
+        return;
+    }
+
+    // Move head-pointer to next queue
+    queue_req_t *result = pq->head;
+    pq->head = pq->head->next;
+    
+    // If priority queue is empty after dequeue, set tail to NULL
+    if(pq->head == NULL){
+        pq->tail = NULL;
+    }
+
+    free(result);
 }
-/*
-request_t *dequeue_pq(priority_queue_req_t *pq, int prio){
-    return dequeue_request(*pq.queues[prio]);
+
+void init_priority_queue(priority_queue_req_t *pq, int n){
+    //TODO: initialise PQ with n queues
 }
-*/
+
+void enqueue_request_in_pq(priority_queue_req_t *pq, request_t req){
+    //TODO: enqueue req into PQ's queue with same priority
+}
+
+// TESTS TO CHECK FUNCTIONALITY
+void print_test_1(priority_queue_req_t *pq){
+    printf("  PQ:           %p\n", (void *)pq);
+    printf("  PQ head:      %p\n", (void *)pq->head);
+    printf("  PQ tail:      %p\n", (void *)pq->tail);
+    //printf("  PQ head prio: %u\n", pq->head->priority);
+
+    printf("\nENQUEUE (pq)\n\n");
+    enqueue_queue(pq);
+
+    printf("  PQ:           %p\n", (void *)pq);
+    printf("  PQ head:      %p\n", (void *)pq->head);
+    printf("  PQ head prio: %u\n", pq->head->priority);
+    printf("  PQ tail:      %p\n", (void *)pq->tail);
+    printf("  PQ tail prio: %u\n", pq->tail->priority);
+
+    printf("\nENQUEUE (pq)\n\n");
+    enqueue_queue(pq);
+
+    printf("  PQ:           %p\n", (void *)pq);
+    printf("  PQ head:      %p\n", (void *)pq->head);
+    printf("  PQ head prio: %u\n", pq->head->priority);
+    printf("  PQ tail:      %p\n", (void *)pq->tail);
+    printf("  PQ tail prio: %u\n", pq->tail->priority);
+
+    printf("\nDEQUEUE (pq)\n\n");
+    dequeue_queue(pq);
+
+    printf("  PQ:           %p\n", (void *)pq);
+    printf("  PQ head:      %p\n", (void *)pq->head);
+    printf("  PQ head prio: %u\n", pq->head->priority);
+    printf("  PQ tail:      %p\n", (void *)pq->tail);
+    printf("  PQ tail prio: %u\n", pq->tail->priority);
+}
 
 // Driver code
 int main(void){
-    request_t *req0 = malloc(sizeof(request_t));
-    request_t *req1 = malloc(sizeof(request_t));
-    req0->prio = 0; 
-    req1->prio = 1;
-
-    queue_req_t *q = malloc(sizeof(queue_req_t));   
-
-    priority_queue_req_t *pq = init_pq();
-
-    enqueue_pq(pq, req0);
-
-    //queue_req functions work:
-    /*
-    enqueue_request(q, req0);
-    enqueue_request(q, req1);
-    printf("%p\n", (void *)&q);
-    printf("%p\n", (void *)&q->head);
-    printf("%p\n", (void *)&q->head->req);
-    printf("%p\n", (void *)&q->head->req->prio);
-    request_t *res1 = dequeue_request(q);
-    printf("%u\n", res1->prio);
-    printf("%p\n", (void *)&q);
-    printf("%p\n", (void *)&q->head);
-    printf("%p\n", (void *)&q->head->req);
-    printf("%p\n", (void *)&q->head->req->prio);
-    request_t *res2 = dequeue_request(q);
-    printf("%u\n", res2->prio);
-    printf("%p\n", (void *)&q);
-    printf("%p\n", (void *)&q->head);
-    printf("%p\n", (void *)&q->head->req);
-    printf("%p\n", (void *)&q->head->req->prio);
-    */
-
-    /*
-    printf("%u\n", req0->prio);
-    printf("%p\n", (void *)&pq);
-    printf("%p\n", (void *)&pq->queues[0]);
-    printf("%p\n", (void *)&pq->queues[1]);
-    printf("%p\n", (void *)&pq->queues[0]->head);
-    printf("%p\n", (void *)&pq->queues[0]->head->req);
-    printf("%p\n", (void *)&pq->queues[0]->head->req->prio);
-    printf("Hallo?\n");
+    priority_queue_req_t *pq = malloc(sizeof(priority_queue_req_t));
     
-    printf("%d\n", &pq.queues[0]->head->req->prio);
-    printf("%d\n", pq.queues[0]->head);
-    printf("%d\n", pq.queues[0]);
-    printf("%d\n", &(pq.queues[0]));    
-    dequeue_pq(pq, 0);
-    printf("%d\n", pq.queues[0]->head);
-    printf("%d\n", pq.queues[0]);
-    printf("%d\n", &(pq.queues[0]));
-    */    
+    // print_test_1(pq);
+
     return 0;
 }
 

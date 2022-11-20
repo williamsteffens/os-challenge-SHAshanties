@@ -11,6 +11,8 @@
 typedef struct queue_req{
     node_req_t *head;
     node_req_t *tail;
+    struct queue_req* next;
+    uint8_t priority;
 }queue_req_t;
 
 void enqueue_request(queue_req_t *q, request_t *req);
