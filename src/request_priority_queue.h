@@ -15,11 +15,8 @@ typedef struct priority_queue_req{
 
 void enqueue_queue(priority_queue_req_t *pq);
 void dequeue_queue(priority_queue_req_t *pq);
-
-/*
-priority_queue_req_t init_pq();
-void enqueue_pq(priority_queue_req_t pq, request_t *req);    
-request_t *dequeue_pq(priority_queue_req_t pq, int prio);
-*/
+void init_priority_queue(priority_queue_req_t *pq, int n);
+void enqueue_request_pq(priority_queue_req_t *pq, request_t req);
+request_t dequeue_request_pq(priority_queue_req_t *pq);
 
 #endif // PRIORITY_QUEUE_REQ_H
