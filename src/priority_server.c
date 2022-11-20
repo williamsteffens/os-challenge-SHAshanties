@@ -41,7 +41,7 @@
 #include "priority_server.h"
 
 
-void sumbit_priority_task(int sd, uint8_t hash[SHA256_DIGEST_LENGTH], uint64_t start, uint64_t end, int prio)
+void sumbit_priority_task(int sd, uint8_t hash[SHA256_DIGEST_LENGTH], uint64_t start, uint64_t end, uint8_t prio)
 {
     task_t *ptask = malloc(sizeof(task_t));
     ptask->sd = sd; 
@@ -50,7 +50,7 @@ void sumbit_priority_task(int sd, uint8_t hash[SHA256_DIGEST_LENGTH], uint64_t s
     ptask->end = end;
 
     pthread_mutex_lock(&queue_mutex);
-        enqueue_task(ptask);
+        enqueue_task(ptask); //<-------------- Change
     pthread_cond_signal(&queue_cond_var);
     pthread_mutex_unlock(&queue_mutex);
 }
@@ -79,7 +79,7 @@ void launch_priority_cached_thread_pool_server(struct Server *server, int nthrea
     }
 
     ht = create_htable();
-
+    //<-------------- Create PQ here
 
     // Server loop
     for (;;) {  
@@ -148,7 +148,7 @@ void *thread_pool_worker_priority_cached()
 
     for (;;) {
         pthread_mutex_lock(&queue_mutex);
-            while ((ptask = dequeue_task()) == NULL)
+            while ((ptask = dequeue_task()) == NULL)//<-------------- Change
                 pthread_cond_wait(&queue_cond_var, &queue_mutex);
         pthread_mutex_unlock(&queue_mutex);
 
