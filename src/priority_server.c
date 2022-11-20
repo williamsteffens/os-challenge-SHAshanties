@@ -41,6 +41,20 @@
 #include "priority_server.h"
 
 
+void sumbit_priority_task(int sd, uint8_t hash[SHA256_DIGEST_LENGTH], uint64_t start, uint64_t end, int prio)
+{
+    task_t *ptask = malloc(sizeof(task_t));
+    ptask->sd = sd; 
+    memcpy(&ptask->hash, hash, SHA256_DIGEST_LENGTH);
+    ptask->start = start;
+    ptask->end = end;
+
+    pthread_mutex_lock(&queue_mutex);
+        enqueue_task(ptask);
+    pthread_cond_signal(&queue_cond_var);
+    pthread_mutex_unlock(&queue_mutex);
+}
+
 
 void launch_priority_cached_thread_pool_server(struct Server *server, int nthreads)
 {
@@ -121,7 +135,7 @@ void launch_priority_cached_thread_pool_server(struct Server *server, int nthrea
             printf("[server][?] p:     %u\n", req.prio);
         #endif 
 
-        sumbit_task(conn_sd, req.hash, req.start, req.end);
+        sumbit_priority_task(conn_sd, req.hash, req.start, req.end, req.prio);
     }
 }
 
