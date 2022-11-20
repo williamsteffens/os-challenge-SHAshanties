@@ -49,7 +49,5 @@ int main(int argc, char *argv[])
 
     // Priority server
     // ------------------------------
-
-    // CPU tuned affinity server
-
+    launch_priority_cached_thread_pool_server(&server, 4);
 }
