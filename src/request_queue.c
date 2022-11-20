@@ -29,7 +29,7 @@ void enqueue_request(queue_req_t *q, request_t *req){
 request_t *dequeue_request(queue_req_t *q){
     // If priority queue is empty
     if(q->head == NULL){
-        printf("The queue is empty!");
+        printf("The queue with priority %u is empty!\n", q->priority);
         return NULL;
     }
 

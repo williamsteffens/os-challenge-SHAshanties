@@ -43,12 +43,19 @@ void enqueue_queue(priority_queue_req_t *pq){
 void dequeue_queue(priority_queue_req_t *pq){
     // If priority queue is empty
     if(pq->head == NULL){
-        printf("The priority queue is empty!");
+        printf("The priority queue is empty!\n");
         return;
     }
 
+    queue_req_t *result_queue = pq->head;
+    request_t *result_request = dequeue_request(result_queue);
+    
+    // free() the queue's nodes, discarding the requests
+    while(result_request != NULL){
+        result_request = dequeue_request(result_queue);
+    }
+
     // Move head-pointer to next queue
-    queue_req_t *result = pq->head;
     pq->head = pq->head->next;
     
     // If priority queue is empty after dequeue, set tail to NULL
@@ -56,7 +63,7 @@ void dequeue_queue(priority_queue_req_t *pq){
         pq->tail = NULL;
     }
 
-    free(result);
+    free(result_queue);
 }
 
 void init_priority_queue(priority_queue_req_t *pq, int n){
@@ -64,6 +71,14 @@ void init_priority_queue(priority_queue_req_t *pq, int n){
     for(int i = 0; i < n; i++){
         enqueue_queue(pq);
     }
+}
+
+void free_priority_queue(priority_queue_req_t *pq){
+    while(pq->head != NULL){
+        dequeue_queue(pq);
+    }
+    dequeue_queue(pq);
+    free(pq);
 }
 
 void enqueue_request_pq(priority_queue_req_t *pq, request_t *req){
@@ -86,7 +101,6 @@ request_t *dequeue_request_pq(priority_queue_req_t *pq){
     
     // Find highest priority non-empty queue
     while(q->head == NULL){
-        printf("%u ", q->priority);
         q = q->prev;
     }
     
@@ -101,7 +115,7 @@ void print_test_1(priority_queue_req_t *pq){
     printf("  PQ tail:           %p\n", (void *)pq->tail);
     //printf("  PQ head prio: %u\n", pq->head->priority);
 
-    printf("\nENQUEUE (pq)\n\n");
+    printf("\nENQUEUE (pq)\n");
     enqueue_queue(pq);
 
     printf("  PQ:                %p\n", (void *)pq);
@@ -110,7 +124,7 @@ void print_test_1(priority_queue_req_t *pq){
     printf("  PQ tail:           %p\n", (void *)pq->tail);
     printf("  PQ tail prio:      %u\n", pq->tail->priority);
 
-    printf("\nENQUEUE (pq)\n\n");
+    printf("\nENQUEUE (pq)\n");
     enqueue_queue(pq);
 
     printf("  PQ:                %p\n", (void *)pq);
@@ -121,7 +135,7 @@ void print_test_1(priority_queue_req_t *pq){
     printf("  PQ tail prev:      %p\n", (void *)pq->tail->prev);
     printf("  PQ tail prev prio: %u\n", pq->tail->prev->priority);
 
-    printf("\nDEQUEUE (pq)\n\n");
+    printf("\nDEQUEUE (pq)\n");
     dequeue_queue(pq);
 
     printf("  PQ:                %p\n", (void *)pq);
@@ -129,6 +143,12 @@ void print_test_1(priority_queue_req_t *pq){
     printf("  PQ head prio:      %u\n", pq->head->priority);
     printf("  PQ tail:           %p\n", (void *)pq->tail);
     printf("  PQ tail prio:      %u\n", pq->tail->priority);
+
+    printf("\nDEQUEUE (pq)\n");
+    dequeue_queue(pq);
+
+    printf("\nDEQUEUE (pq)\n");
+    dequeue_queue(pq);
 }
 
 // Tests: init_priority_queue()
@@ -143,8 +163,15 @@ void print_test_2(priority_queue_req_t *pq){
     printf("  PQ tail prio: %u\n", pq->tail->priority);
 }
 
-// Tests: enqueue_requst_pq()
+// Tests: free_priority_queue()
 void print_test_3(priority_queue_req_t *pq){
+    print_test_2(pq);
+    free_priority_queue(pq);
+    printf("%p\n", pq);
+}
+
+// Tests: enqueue_requst_pq()
+void print_test_4(priority_queue_req_t *pq){
     print_test_2(pq);
 
     request_t *req = malloc(sizeof(request_t));
@@ -171,7 +198,7 @@ void print_test_3(priority_queue_req_t *pq){
 }
 
 // Tests: dequeue_request_pq()
-void print_test_4(priority_queue_req_t *pq){
+void print_test_5(priority_queue_req_t *pq){
     init_priority_queue(pq, 4);
 
     request_t *result;
@@ -204,6 +231,7 @@ int main(void){
     //print_test_2(pq);
     //print_test_3(pq);
     //print_test_4(pq);
+    //print_test_5(pq);
 
     return 0;
 }
