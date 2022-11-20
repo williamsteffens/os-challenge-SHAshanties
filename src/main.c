@@ -8,7 +8,8 @@
 #include "forked_server.h"
 #include "nonblocking_IO_server.h"
 #include "cached_server.h"
-#include "co_worker.h"
+#include "priority_server.h"
+//#include "co_worker.h"
 
 
 
@@ -45,7 +46,7 @@ int main(int argc, char *argv[])
     // Nonblocking I/O server
     // ------------------------------
     //launch_nonblocking_IO_cached_thread_pool_server(&server, 4);
-    launch_nonblocking_IO_cached_split_thread_pool_server(&server, 4);
+    //launch_nonblocking_IO_cached_split_thread_pool_server(&server, 4);
 
     // Priority server
     // ------------------------------

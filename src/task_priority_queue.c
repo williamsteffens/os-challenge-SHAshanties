@@ -1,16 +1,17 @@
-#ifndef PRIORITY_QUEUE_REQ_C
-#define PRIORITY_QUEUE_REQ_C
+#ifndef TASK_PRIORITY_QUEUE_C
+#define TASK_PRIORITY_QUEUE_C
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include "os-challenge-util.h"
-#include "request_node.h"
-#include "request_queue.h"
-#include "request_priority_queue.h"
+//#include "task_node.h"
+#include "task_queue.h"
+#include "task_priority_queue.h"
 
-void enqueue_queue(priority_queue_req_t *pq){
-    queue_req_t *new_queue = malloc(sizeof(queue_req_t));
+void enqueue_queue(task_priority_queue_t *pq){
+    printf("Test 1\n");
+    task_queue_t *new_queue = malloc(sizeof(task_queue_t));
     
     new_queue->next = NULL;
     new_queue->prev = NULL;
@@ -29,30 +30,22 @@ void enqueue_queue(priority_queue_req_t *pq){
 
     // New queue becomes tail of priority queue
     pq->tail = new_queue;
-
-    /* Shows the queues and there pointers */
-    // printf("\nPrio: %u\n", new_queue->priority);
-    // printf("*  PQ head:           %p\n", (void *)pq->head);
-    // printf("*  PQ head next:      %p\n", (void *)pq->head->next);
-    // printf("*  PQ head prev:      %p\n", (void *)pq->head->prev);
-    // printf("*  PQ tail:           %p\n", (void *)pq->tail);
-    // printf("*  PQ tail next:      %p\n", (void *)pq->tail->next);
-    // printf("*  PQ tail prev:      %p\n", (void *)pq->tail->prev);   
 }
 
-void dequeue_queue(priority_queue_req_t *pq){
+void dequeue_queue(task_priority_queue_t *pq){
+    printf("Test 2\n");
     // If priority queue is empty
     if(pq->head == NULL){
         printf("The priority queue is empty!\n");
         return;
     }
 
-    queue_req_t *result_queue = pq->head;
-    request_t *result_request = dequeue_request(result_queue);
+    task_queue_t *result_queue = pq->head;
+    task_t *result_task = dequeue_task_q(result_queue);
     
-    // free() the queue's nodes, discarding the requests
-    while(result_request != NULL){
-        result_request = dequeue_request(result_queue);
+    // free() the queue's nodes, discarding the tasks
+    while(result_task != NULL){
+        result_task = dequeue_task_q(result_queue);
     }
 
     // Move head-pointer to next queue
@@ -66,14 +59,16 @@ void dequeue_queue(priority_queue_req_t *pq){
     free(result_queue);
 }
 
-void init_priority_queue(priority_queue_req_t *pq, int n){
+void init_priority_queue(task_priority_queue_t *pq, int n){
+    printf("Test 3\n");
     // Initialise pq with n queues
     for(int i = 0; i < n; i++){
         enqueue_queue(pq);
     }
 }
 
-void free_priority_queue(priority_queue_req_t *pq){
+void free_priority_queue(task_priority_queue_t *pq){
+    printf("Test 4\n");
     while(pq->head != NULL){
         dequeue_queue(pq);
     }
@@ -81,36 +76,46 @@ void free_priority_queue(priority_queue_req_t *pq){
     free(pq);
 }
 
-void enqueue_request_pq(priority_queue_req_t *pq, request_t *req){
+void enqueue_task_pq(task_priority_queue_t *pq, task_t *t){
+    //printf("Test 5\n");
     //TODO: Check if the queue can be found in O(1), by adding 48 * n to the address
     // The queues' addresses are shifted by 48, starting from head-pointer
-    //queue_req_t *q = pq->head + (48 * req->prio) - 48;
+    //task_queue_t *q = pq->head + (48 * t->prio) - 48;
     // Maybe look at this link?: https://www.tutorialspoint.com/cprogramming/c_pointer_arithmetic.htm
     
-    queue_req_t *q = pq->head;
-
+    task_queue_t *q = pq->head;
+    //printf("pq->head: %p\n", (void *)pq->head);
+    //printf("t->prio: %u\n", t->prio);
+    //printf("Test 5.1\n");
     // Traverse PQ until q with same priority is found    
-    while(q->priority != req->prio){
+    while(q->priority != t->prio){
+        //printf("Test 5.2 %u\n", t->prio);
         q = q->next;
     }
-        
-    enqueue_request(q, req);
+    //printf("Test 5.3\n");
+    enqueue_task_q(q, t);
 }
 
-request_t *dequeue_request_pq(priority_queue_req_t *pq){
-    queue_req_t *q = pq->tail;
-    
+task_t *dequeue_task_pq(task_priority_queue_t *pq){
+    //printf("Test 6\n");
+    task_queue_t *q = malloc(sizeof(task_queue_t)); 
+    q = pq->tail;
+    //printf("Test 6.1\n");
     // Find highest priority non-empty queue
     while(q->head == NULL){
+        //printf("Test 6.2\n");
         q = q->prev;
+        if(q->priority == 1){
+            break;
+        }
     }
-    
-    return dequeue_request(q);
+    //printf("Test 6.3\n");
+    return dequeue_task_q(q);
 }
 
 /* TESTS TO CHECK FUNCTIONALITY */
 // Tests: enqueue_queue() and dequeue_queue() 
-void print_test_1(priority_queue_req_t *pq){
+void print_test_1(task_priority_queue_t *pq){
     printf("  PQ:                %p\n", (void *)pq);
     printf("  PQ head:           %p\n", (void *)pq->head);
     printf("  PQ tail:           %p\n", (void *)pq->tail);
@@ -153,7 +158,7 @@ void print_test_1(priority_queue_req_t *pq){
 }
 
 // Tests: init_priority_queue()
-void print_test_2(priority_queue_req_t *pq){
+void print_test_2(task_priority_queue_t *pq){
     int n = 16;
     init_priority_queue(pq, n);
     printf("%d queues are initialised...\n\n", n);
@@ -165,53 +170,53 @@ void print_test_2(priority_queue_req_t *pq){
 }
 
 // Tests: free_priority_queue()
-void print_test_3(priority_queue_req_t *pq){
+void print_test_3(task_priority_queue_t *pq){
     print_test_2(pq);
     free_priority_queue(pq);
     printf("%p\n", pq);
 }
 
-// Tests: enqueue_requst_pq()
-void print_test_4(priority_queue_req_t *pq){
+// Tests: enqueue_task_pq()
+void print_test_4(task_priority_queue_t *pq){
     print_test_2(pq);
 
-    request_t *req = malloc(sizeof(request_t));
-    req->prio = 5;
+    task_t *t= malloc(sizeof(task_t));
+    t->prio = 5;
     
     // Pointer for easy access to the enqueued queue
-    queue_req_t *q = malloc(sizeof(queue_req_t));
+    task_queue_t *q = malloc(sizeof(task_queue_t));
     q = pq->head;
-    while(q->priority != req->prio){
+    while(q->priority != t->prio){
         q = q->next;
     }
 
-    printf("\nENQUEUE (pq) with req\n\n");
-    enqueue_request_pq(pq, req);
+    printf("\nENQUEUE (pq) with t\n\n");
+    enqueue_task_pq(pq, t);
     printf("  PQ:            %p\n", (void *)pq);
     printf("  PQ head:       %p\n", (void *)pq->head);
     printf("  PQ head prio:  %u\n", pq->head->priority);
     printf("  PQ Q:          %p\n", (void *)q);
     printf("  PQ Q prio:     %u\n", q->priority);
-    printf("  PQ Q req:      %p\n", (void *)q->head->req);
-    printf("  PQ Q req prio: %u\n", q->head->req->prio);
+    printf("  PQ Q t:        %p\n", (void *)q->head->task);
+    printf("  PQ Q t prio:   %u\n", q->head->task->prio);
     printf("  PQ tail:       %p\n", (void *)pq->tail);
     printf("  PQ tail prio:  %u\n", pq->tail->priority);
 }
 
-// Tests: dequeue_request_pq()
-void print_test_5(priority_queue_req_t *pq){
+// Tests: dequeue_task_pq()
+void print_test_5(task_priority_queue_t *pq){
     init_priority_queue(pq, 4);
 
-    request_t *result;
-    request_t *req1 = malloc(sizeof(request_t));
-    request_t *req3 = malloc(sizeof(request_t));
-    req1->prio = 1;
-    req3->prio = 3;
+    task_t *result;
+    task_t *t1 = malloc(sizeof(task_t));
+    task_t *t3 = malloc(sizeof(task_t));
+    t1->prio = 1;
+    t3->prio = 3;
 
-    printf("\nENQUEUE (pq) with req1\n");
-    enqueue_request_pq(pq, req1);
-    printf("\nENQUEUE (pq) with req3\n");
-    enqueue_request_pq(pq, req3);
+    printf("\nENQUEUE (pq) with t1\n");
+    enqueue_task_pq(pq, t1);
+    printf("\nENQUEUE (pq) with t3\n");
+    enqueue_task_pq(pq, t3);
 
     printf("  PQ:            %p\n", (void *)pq);
     printf("  PQ head:       %p\n", (void *)pq->head);
@@ -220,14 +225,14 @@ void print_test_5(priority_queue_req_t *pq){
     printf("  PQ tail prio:  %u\n", pq->tail->priority);
 
     printf("\nDEQUEUE (pq)\n\n");
-    result = dequeue_request_pq(pq);
+    result = dequeue_task_pq(pq);
     printf("Result:          %p\n", (void *)result);
     printf("Result prio:     %u\n", result->prio);
 }
 
 // Driver code
 //int main(void){
-//    priority_queue_req_t *pq = malloc(sizeof(priority_queue_req_t));
+//    task_priority_queue_t *pq = malloc(sizeof(task_priority_queue_t));
 //    //print_test_1(pq);
 //    //print_test_2(pq);
 //    //print_test_3(pq);
@@ -237,11 +242,11 @@ void print_test_5(priority_queue_req_t *pq){
 //    return 0;
 //}
 
-#endif // PRIORITY_QUEUE_REQ_C
+#endif // TASK_PRIORITY_QUEUE_C
 
 /* Experiments:
     - Test naive approach, F.I.F.S., i.e. priority 1 stays in PQ[0] until all others are empty
-    - Test timed priority, i.e. request priority increases with time, pushing onto higher PQs
+    - Test timed priority, i.e. task priority increases with time, pushing onto higher PQs
     
 ::LINKS::
 "1 queue for each priority"

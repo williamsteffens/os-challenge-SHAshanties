@@ -39,18 +39,21 @@
 #include <unistd.h>
 
 #include "priority_server.h"
+#include "task_queue.h"
+#include "task_priority_queue.h"
 
 
-void sumbit_priority_task(int sd, uint8_t hash[SHA256_DIGEST_LENGTH], uint64_t start, uint64_t end, uint8_t prio)
+void sumbit_priority_task(int sd, uint8_t hash[SHA256_DIGEST_LENGTH], uint64_t start, uint64_t end, uint8_t prio, task_priority_queue_t *pq)
 {
     task_t *ptask = malloc(sizeof(task_t));
     ptask->sd = sd; 
     memcpy(&ptask->hash, hash, SHA256_DIGEST_LENGTH);
     ptask->start = start;
     ptask->end = end;
+    ptask->prio = prio;
 
     pthread_mutex_lock(&queue_mutex);
-        enqueue_task(ptask); //<-------------- Change
+    enqueue_task_pq(pq, ptask); //<-------------- Enqueue task to PQ
     pthread_cond_signal(&queue_cond_var);
     pthread_mutex_unlock(&queue_mutex);
 }
@@ -66,6 +69,10 @@ void launch_priority_cached_thread_pool_server(struct Server *server, int nthrea
     uint8_t buffer[PACKET_REQUEST_SIZE];
     request_t req;
 
+    ht = create_htable();
+    pq = malloc(sizeof(task_priority_queue_t)); //<-------------- Create PQ here
+    init_priority_queue(pq, 16);
+
     pthread_mutex_init(&queue_mutex, NULL);
     pthread_mutex_init(&htable_mutex, NULL);
     pthread_cond_init(&queue_cond_var, NULL);
@@ -73,13 +80,10 @@ void launch_priority_cached_thread_pool_server(struct Server *server, int nthrea
     // Create Thread Pool
     pthread_t thread_pool[nthreads];
     for (int i = 0; i < nthreads; ++i) {
-        pthread_create(&thread_pool[i], NULL, thread_pool_worker_cached, NULL);
+        pthread_create(&thread_pool[i], NULL, thread_pool_worker_priority_cached, NULL);
         //CPU_SET(i, &set);
         //pthread_setaffinity_np(thread_pool[i], sizeof(set), &set);
     }
-
-    ht = create_htable();
-    //<-------------- Create PQ here
 
     // Server loop
     for (;;) {  
@@ -135,7 +139,7 @@ void launch_priority_cached_thread_pool_server(struct Server *server, int nthrea
             printf("[server][?] p:     %u\n", req.prio);
         #endif 
 
-        sumbit_priority_task(conn_sd, req.hash, req.start, req.end, req.prio);
+        sumbit_priority_task(conn_sd, req.hash, req.start, req.end, req.prio, pq);
     }
 }
 
@@ -148,7 +152,7 @@ void *thread_pool_worker_priority_cached()
 
     for (;;) {
         pthread_mutex_lock(&queue_mutex);
-            while ((ptask = dequeue_task()) == NULL)//<-------------- Change
+            while ((ptask = dequeue_task_pq(pq)) == NULL)//<-------------- Dequeue task from PQ
                 pthread_cond_wait(&queue_cond_var, &queue_mutex);
         pthread_mutex_unlock(&queue_mutex);
 
