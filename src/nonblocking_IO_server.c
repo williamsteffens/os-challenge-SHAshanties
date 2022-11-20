@@ -69,13 +69,13 @@ void launch_nonblocking_IO_cached_thread_pool_server(struct Server *server, int 
 
     epoll_ctl_add(epoll_fd, server->socketfd, EPOLLIN);
 
+    // Hash table create
+    ht = create_htable();
+
     // Create thread pool
     pthread_t thread_pool[nthreads];
     for (int i = 0; i < nthreads; ++i)
         pthread_create(&thread_pool[i], NULL, thread_pool_nonblocking_IO_cached_worker, NULL);
-
-    // Hash table create
-    ht = create_htable();
 
 
     // Server loop

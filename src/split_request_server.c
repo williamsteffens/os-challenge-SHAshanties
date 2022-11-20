@@ -71,14 +71,14 @@ void launch_split_req_cached_thread_pool_server(struct Server *server, int nthre
     pthread_mutex_init(&queue_mutex, NULL);
     pthread_cond_init(&queue_cond_var, NULL);
 
+    ht = create_htable();
+
     pthread_t thread_pool[nthreads];
     for (int i = 0; i < nthreads; ++i) {
         int *arg = malloc(sizeof(int));
         *arg = i;
         pthread_create(&thread_pool[i], NULL, thread_pool_worker_split_cached, arg);
     }
-
-    ht = create_htable();
 
 
     for (;;) {

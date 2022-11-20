@@ -50,6 +50,8 @@ void launch_cached_thread_pool_server(struct Server *server, int nthreads)
     uint8_t buffer[PACKET_REQUEST_SIZE];
     request_t req;
 
+    ht = create_htable();
+
     pthread_mutex_init(&queue_mutex, NULL);
     pthread_mutex_init(&htable_mutex, NULL);
     pthread_cond_init(&queue_cond_var, NULL);
@@ -61,8 +63,6 @@ void launch_cached_thread_pool_server(struct Server *server, int nthreads)
         //CPU_SET(i, &set);
         //pthread_setaffinity_np(thread_pool[i], sizeof(set), &set);
     }
-
-    ht = create_htable();
 
 
     // Server loop

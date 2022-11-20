@@ -9,7 +9,6 @@
 #include "nonblocking_IO_server.h"
 #include "cached_server.h"
 #include "priority_server.h"
-//#include "co_worker.h"
 
 
 
@@ -37,7 +36,7 @@ int main(int argc, char *argv[])
 
     // Cached server
     // ------------------------------
-    //launch_cached_thread_pool_server(&server, 4);
+    launch_cached_thread_pool_server(&server, 4);
 
     // Split Request server
     // ------------------------------
@@ -50,5 +49,5 @@ int main(int argc, char *argv[])
 
     // Priority server
     // ------------------------------
-    launch_priority_cached_thread_pool_server(&server, 4);
+    //launch_priority_cached_thread_pool_server(&server, 4);
 }
