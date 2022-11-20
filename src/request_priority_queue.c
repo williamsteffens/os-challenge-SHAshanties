@@ -55,8 +55,19 @@ void init_priority_queue(priority_queue_req_t *pq, int n){
     }
 }
 
-void enqueue_request_pq(priority_queue_req_t *pq, request_t req){
-    //TODO: enqueue req into PQ's queue with same priority
+void enqueue_request_pq(priority_queue_req_t *pq, request_t *req){
+    //TODO: Check if the queue can be found in O(1), by adding 48 * n to the address
+    // The queues' addresses are shifted by 48, starting from head-pointer
+    //queue_req_t *q = pq->head + (48 * req->prio) - 48;
+    
+    queue_req_t *q = pq->head;
+
+    // Traverse PQ until q with same priority is found    
+    while(q->priority != req->prio){
+        q = q->next;
+    }
+        
+    enqueue_request(q, req);
 }
 
 request_t dequeue_request_pq(priority_queue_req_t *pq){
@@ -111,6 +122,32 @@ void print_test_2(priority_queue_req_t *pq){
     printf("  PQ tail prio: %u\n", pq->tail->priority);
 }
 
+// Tests: enqueue_requst_pq()
+void print_test_3(priority_queue_req_t *pq){
+    print_test_2(pq);
+
+    request_t *req = malloc(sizeof(request_t));
+    req->prio = 5;
+    
+    // Pointer for easy access to the enqueued queue
+    queue_req_t *q = malloc(sizeof(queue_req_t));
+    q = pq->head;
+    while(q->priority != req->prio){
+        q = q->next;
+    }
+
+    printf("\nENQUEUE (pq) with req\n\n");
+    enqueue_request_pq(pq, req);
+    printf("  PQ:            %p\n", (void *)pq);
+    printf("  PQ head:       %p\n", (void *)pq->head);
+    printf("  PQ head prio:  %u\n", pq->head->priority);
+    printf("  PQ Q:          %p\n", (void *)q);
+    printf("  PQ Q prio:     %u\n", q->priority);
+    printf("  PQ Q req:      %p\n", (void *)q->head->req);
+    printf("  PQ Q req prio: %u\n", q->head->req->prio);
+    printf("  PQ tail:       %p\n", (void *)pq->tail);
+    printf("  PQ tail prio:  %u\n", pq->tail->priority);
+}
 
 // Driver code
 int main(void){
@@ -118,6 +155,7 @@ int main(void){
     
     //print_test_1(pq);
     //print_test_2(pq);
+    print_test_3(pq);
 
     return 0;
 }
