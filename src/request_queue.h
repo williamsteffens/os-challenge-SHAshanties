@@ -12,6 +12,7 @@ typedef struct queue_req{
     node_req_t *head;
     node_req_t *tail;
     struct queue_req* next;
+    struct queue_req* prev;
     uint8_t priority;
 }queue_req_t;
 
