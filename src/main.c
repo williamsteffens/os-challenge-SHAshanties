@@ -8,6 +8,7 @@
 #include "forked_server.h"
 #include "nonblocking_IO_server.h"
 #include "cached_server.h"
+#include "co_worker.h"
 
 
 
@@ -15,7 +16,7 @@ int main(int argc, char *argv[])
 {
     if (argc != 2) {
         fprintf(stderr, "Incorrect usage. Usage: %s port\n", argv[0]);
-        exit(EXIT_FAILURE);
+        exit(-1);
     }
 
     // Second Argument should be port num
@@ -33,19 +34,22 @@ int main(int argc, char *argv[])
     //launch_thread_per_client_server(&server);
     //launch_thread_pool_server(&server, 4);
 
+    // Cached server
+    // ------------------------------
+    //launch_cached_thread_pool_server(&server, 4);
+
     // Split Request server
     // ------------------------------
-    //launch_split_req_thread_pool_server(&server, 4);
+    //launch_split_req_cached_thread_pool_server(&server, 4);
 
     // Nonblocking I/O server
     // ------------------------------
-    //launch_nonblocking_IO_split_req_thread_pool_server(&server, 4);
-
-    // Cached server
-    // ------------------------------
-    launch_cached_split_req_thread_pool_server(&server, 4);
+    //launch_nonblocking_IO_cached_thread_pool_server(&server, 4);
+    launch_nonblocking_IO_cached_split_thread_pool_server(&server, 4);
 
     // Priority server
     // ------------------------------
+
+    // CPU tuned affinity server
 
 }

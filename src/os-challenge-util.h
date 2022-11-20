@@ -28,17 +28,25 @@
 
 typedef struct request {
   int      sd;
+  int      id;
   uint8_t  hash[SHA256_DIGEST_LENGTH];
   uint64_t start;
   uint64_t end;
   uint8_t  prio;
-  bool     resolved;
 } request_t;
 
 typedef union response {
   uint64_t num;
   uint8_t  bytes[8];
-} response_t; 
+} response_t;
+
+typedef struct mod_response {
+  int      sd;
+  union {
+    uint64_t num;
+    uint8_t  bytes[8];
+  } reverse_hash;
+} mod_response_t;
 
 
 request_t decode_req(int req_socket, uint8_t buffer[PACKET_REQUEST_SIZE]);

@@ -39,13 +39,8 @@
 #include <unistd.h>
 
 
-htable_t *ht;
 
-
-void *thread_pool_worker_cached();
-
-
-void launch_cached_split_req_thread_pool_server(struct Server *server, int nthreads)
+void launch_cached_thread_pool_server(struct Server *server, int nthreads)
 {
     int conn_sd, socklen;
     int req_id = 0;
@@ -59,23 +54,13 @@ void launch_cached_split_req_thread_pool_server(struct Server *server, int nthre
     pthread_mutex_init(&htable_mutex, NULL);
     pthread_cond_init(&queue_cond_var, NULL);
 
-    // Set pthread attributes
-    pthread_attr_t attr;
-    struct sched_param param;
-    pthread_attr_init(&attr);
-    pthread_attr_setschedpolicy(&attr, SCHED_FIFO);
-    // param.sched_priority = 30;
-    // pthread_attr_setschedparam(&attr, &param);
-    
-    // cpu_set_t set;
-    // CPU_ZERO(&set);
-    // CPU_SET(nthreads, &set);
-    // sched_setaffinity(getpid(), sizeof(set), &set);
-
     // Create Thread Pool
     pthread_t thread_pool[nthreads];
-    for (int i = 0; i < nthreads; ++i)
-        pthread_create(&thread_pool[i], &attr, thread_pool_worker_cached, NULL);
+    for (int i = 0; i < nthreads; ++i) {
+        pthread_create(&thread_pool[i], NULL, thread_pool_worker_cached, NULL);
+        //CPU_SET(i, &set);
+        //pthread_setaffinity_np(thread_pool[i], sizeof(set), &set);
+    }
 
     ht = create_htable();
 
@@ -111,6 +96,7 @@ void launch_cached_split_req_thread_pool_server(struct Server *server, int nthre
                 exit(-1);
             }
 
+            close(conn_sd);
             continue; 
         }
 
@@ -123,22 +109,17 @@ void launch_cached_split_req_thread_pool_server(struct Server *server, int nthre
         req.end = be64toh(req.end);
 
         #if DEBUG
-            printf("hash: ");
+            printf("[server][?] hash: ");
             for (int i = SHA256_DIGEST_LENGTH - 1; i >= 0; --i)
                 printf("%02x", req.hash[i]);
             printf("\n");
 
-            printf("start: %d\n", (int)req.start);
-            printf("end:   %d\n", (int)req.end);
-            printf("p:     %u\n", req.prio);
+            printf("[server][?] start: %d\n", (int)req.start);
+            printf("[server][?] end:   %d\n", (int)req.end);
+            printf("[server][?] p:     %u\n", req.prio);
         #endif 
 
-        // if prio is high put it in here lol
-
-        split_and_sumbit_task(nthreads, conn_sd, req_id, req.hash, req.start, req.end);
-
-        // Inc req_id for next request
-        ++req_id;
+        sumbit_task(conn_sd, req.hash, req.start, req.end);
     }
 }
 
@@ -150,43 +131,29 @@ void *thread_pool_worker_cached()
     uint8_t guess_hash[SHA256_DIGEST_LENGTH];
 
     for (;;) {
-        // pthread_mutex_lock(&queue_mutex);
-        //     while ((ptask = dequeue_task()) == NULL)
-        //         pthread_cond_wait(&queue_cond_var, &queue_mutex);
-        // pthread_mutex_unlock(&queue_mutex);
-
-        // Busy waiting
         pthread_mutex_lock(&queue_mutex);
-            while ((ptask = dequeue_task()) == NULL) {
-                pthread_mutex_unlock(&queue_mutex);
-                pthread_mutex_lock(&queue_mutex);
-            }
+            while ((ptask = dequeue_task()) == NULL)
+                pthread_cond_wait(&queue_cond_var, &queue_mutex);
         pthread_mutex_unlock(&queue_mutex);
 
         task_t task = *ptask;
         free(ptask);
 
         #if DEBUG
-            printf("task hash: ");
+            printf("[server][?] task hash: ");
             for (int i = SHA256_DIGEST_LENGTH - 1; i >= 0; --i)
                 printf("%02x", task.hash[i]);
             printf("\n");
 
-            printf("task start: %lu\n", task.start);
-            printf("task end:   %lu\n", task.end);
+            printf("[server][?] task start: %lu\n", task.start);
+            printf("[server][?] task end:   %lu\n", task.end);
         #endif
 
         response_t res = {0};
         for (res.num = task.start; res.num < task.end; ++res.num) {
-            if (done_board[task.id])
-                break;
-
             SHA256(res.bytes, sizeof(uint64_t), guess_hash);
             if (memcmp(task.hash, guess_hash, SHA256_DIGEST_LENGTH) == 0) {
                 res.num = htobe64(res.num);
-                
-                done_board[task.id] = true;
-
                 if ((write(task.sd, res.bytes, sizeof(uint64_t))) == -1) {
                     perror("[server][!] write() failed\n");
                     exit(-1);

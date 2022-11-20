@@ -32,7 +32,6 @@ request_t *decode_preq(int req_socket, uint8_t buffer[PACKET_REQUEST_SIZE])
     preq->start = be64toh(preq->start);
     preq->end = be64toh(preq->end);
     preq->prio = buffer[PACKET_REQUEST_PRIO_OFFSET];
-    preq->resolved = false; 
 
     return preq;    
 }
