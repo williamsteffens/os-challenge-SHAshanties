@@ -480,7 +480,7 @@ lambda  | noPrio avg. score | prio avg. score   | Improvement [%]   |
 
 While not taking into account the waiting time of lower priority requests, the performance might be compromised by this side effect. Even if the higher priority requests are executed faster, the waiting time may become exstensive in certain scenarios in which the lower priority requests are put on hold while a large chunk of higher priority requests get executed. Evenmore, the priority queue is constantly being updated with new requests which are enqueued in their corresponding queue. This poses a risk of neglect of lower priority requests. A work around for this could be introducing additional parameters, such as queue time, same priority chunk size, etc.
 
-In the lambda tests, there was found to be a clear advantage in the priority queue, where the total score is reduced by aprox. 51%.
+In the lambda tests, there was found to be a clear advantage in the priority queue, where the total score is reduced by aprox. 49%.
 However, due to the performance having negligible difference - an even performing a tiny bit worse in the continuous.sh andf total.sh, the implementation was discarded from the final solution.
 
 As a final remark, the priority queue was in our server implemented in the hope of optimizing the performance rather than reliability. In case of future development, a more complex priority hiarichy could yield better results.
