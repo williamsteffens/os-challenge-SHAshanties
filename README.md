@@ -33,9 +33,7 @@ is recommended.
 
 The SHAshanties group consists of: 
 - William Steffens, s185369, wffs@dtu.dk (committed under the username williamsteffens)
-- 
-
-
+- Aleksandar Lukic, s194066, s194066@dtu.dk (committed under the username AleksandarLukic96)
 
 <br />
 
@@ -545,13 +543,3 @@ As the requests are recieved by the server, they are executed in a F.I.F.O manne
 
 ### **Final Version Server**
 Our final server implementation is a Threadpooled Multi-threading server with request caching. 
-
-more time scheduling
-
-attribute 
-
-panic mode 
-
-but split 
-
-hash table vs array
