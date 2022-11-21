@@ -466,11 +466,11 @@ Prio         | 11.945.608                    | 19.218.756                | 31.69
 
 <center>
     
-lambda  | noPrio avg. score | prio avg. score   |
-:---    |:---:              |:---:              |                    
-0.25    | x                 | x                 |
-0.17    | x                 | x                 |
-0.10    | 945.117.098       | 500.816.263       |  
+lambda  | noPrio avg. score | prio avg. score   | Improvement [%]   |
+:---    |:---:              |:---:              |:---:              | 
+0.25    | 499.600.530       | 259.414.530       | 51,92             | 
+0.17    | 648.452.503       | 332.062.016       | 51,02             |
+0.10    | 945.117.098       | 500.816.263       | 52,99             |
 
 **Table 8** - Average score for each server when only lambda is adjusted 
     
@@ -480,7 +480,7 @@ lambda  | noPrio avg. score | prio avg. score   |
 
 While not taking into account the waiting time of lower priority requests, the performance might be compromised by this side effect. Even if the higher priority requests are executed faster, the waiting time may become exstensive in certain scenarios in which the lower priority requests are put on hold while a large chunk of higher priority requests get executed. Evenmore, the priority queue is constantly being updated with new requests which are enqueued in their corresponding queue. This poses a risk of neglect of lower priority requests. A work around for this could be introducing additional parameters, such as queue time, same priority chunk size, etc.
 
-In the lambda tests, there was found to be a clear advantage in the priority queue as lambda is set lower.
+In the lambda tests, there was found to be a clear advantage in the priority queue, where the total score is reduced by aprox. 51%.
 However, due to the performance having negligible difference - an even performing a tiny bit worse in the continuous.sh andf total.sh, the implementation was discarded from the final solution.
 
 As a final remark, the priority queue was in our server implemented in the hope of optimizing the performance rather than reliability. In case of future development, a more complex priority hiarichy could yield better results.
