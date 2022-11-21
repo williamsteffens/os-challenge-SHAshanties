@@ -332,7 +332,7 @@ Based on the results the caching functionality was adopted into the server imple
 
 # Experiment 3 - Splitting the Request Into Tasks
 
-###**Responsible:** 
+### **Responsible:** 
 
 William
 
