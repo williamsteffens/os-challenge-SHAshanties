@@ -466,11 +466,11 @@ Prio         | 11.945.608                    | 19.218.756                | 31.69
 
 <center>
     
-lambda  | noPrio avg. score | prio avg. score   | Improvement [%]   |
+lambda  | noPrio avg. score | prio avg. score   | Redecution [%]    |
 :---    |:---:              |:---:              |:---:              | 
-0.25    | 499.600.530       | 259.414.530       | 51,92             | 
-0.17    | 648.452.503       | 332.062.016       | 51,02             |
-0.10    | 945.117.098       | 500.816.263       | 52,99             |
+0.25    | 499.600.530       | 259.414.530       | 48,08             | 
+0.17    | 648.452.503       | 332.062.016       | 48,98             |
+0.10    | 945.117.098       | 500.816.263       | 47,01             |
 
 **Table 8** - Average score for each server when only lambda is adjusted 
     
