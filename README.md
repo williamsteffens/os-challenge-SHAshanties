@@ -369,27 +369,42 @@ not the silver bullet we were hoping for
 <br /> 
 <br /> 
 
-# Experiment 5 - Priority Queue
+# Experiment 5 - Naive Priority Queue : Highest first
+
 **Responsible:** 
 
+Aleksandar
 
 **Motivation:**
 
+As more and more requests are sent to the server, a queue is inbound to happen. At this point, the implementation has to decide on which requests get to be executed first - and by which parameters. When a request is recieved it has a priority value attatched to it. This indicates the importance of execution and its priority over other requests with lower priority. 
+
+Without any system to prioritize higher priority requests, the execution would be dictated simply by _"First-In-First-Out"_-principle, or **F.I.F.O**, with no regard for prioriisation. This could impact the overall benchmark performance in regards to a lower _lamba_-value.   
 
 **Hypothesis:** 
 
-The number of processes of a pre-forked server significantly influences the server's performance. 
+By ordering requests in a priority queue, the requests with higher priority would be executed quicker. This could have an effect on the benchmark, perhapse improving performance due to execution time for high priority requests.
 
 **Relevant files:**
 
-- src/forked_server.c
-- src/forked_server.h
-- client/run-client-milestone.sh
-- test/experiments/e1/e1a/
+- task_queue.c 
+- task_queue.h
+- task_priority_queue.c
+- task_priority_queue.h
+- simple_queue.h
+- priority_server.c
+- priority_server.h
+- client/run-client-continuous.sh
+- client/run-client-lambda.sh
+- client/run-client-total.sh
+- client/run-client-lambda-medium.sh
+- client/run-client-lambda-low.sh
+- client/run-client-lambda-lower.sh
+- experiments/e5_prio/*
 
 **Setup:**
 
-For this experiment the run-client-continuous configuration was executed 3 times for every number of processes from 1 to 10, from 10 to 25 in steps of 5, and from 25 to 100 in steps of 25 (i.e., 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 50, 75, and 100) and the average was then taken of the 3 executions. This was done in order to cover a wide range of options for the number of processes, that would hopefully make some pattern emerge that could be concluded on in regards to how the number of pre-forked processes effected performance. 
+For testing the priority queue implementation, we have compared the priority_server with the cached_server, on which is was further implemented. The two servers were tested 3 times each using run-client-continuous.sh, run-client-lambda.sh and run-client-total.sh. The result for each client test is then calculated as the average for the 3 executions. By using the three different tests, we can compare the two servers on quantity intake and lambda value. If the hypothesis is to be confirmed, we should see a difference in the execution of run-client-lambda.sh.
 
 **Results:**
 
@@ -398,7 +413,7 @@ The average score of the pre-forked server vs. number of processes used can be s
 <center>
 
 ![Figure 7](/experiments/e5_prio/plot/prio_e5.png "Figure 7 - figure text")
-**Figure 7** - Number of processes, nprocesses plotted against the average score of 3 runs of the run-client-continuous configuration. 
+**Figure 7** - Comparison of _Cached thread pool server_ and _priority cached thread pool server_ 
 
 </center>
 
@@ -409,14 +424,26 @@ server       | avg. score continuous config. | avg. score lambda config. |  scor
 noPrio       | 11.821.705                    | 19.440.887                | 30.428.390              
 Prio         | 11.945.608                    | 19.218.756                | 31.699.477              
 
-**Table 7** - Number of processes, nprocesses and the corresponding the average score of 3 runs of the run-client-continuous configuration.
+**Table 7** - Average score for each server in the three tests 
 
 </center>
 
+<center>
+    
+lambda  | noPrio avg. score | prio avg. score   |
+:---    |:---:              |:---:              |                    
+0.25    | x                 | x                 |
+0.17    | x                 | x                 |
+0.10    | 945.117.098       | 500.816.263       |  
 
+**Table 8** - Average score for each server when only lambda is adjusted 
+    
+</center>
 
-<br /> 
-<br /> 
+**Conclusion** 
+
+While not taking into account the waiting time of lower priority requests, the performance might be compromised by this side effect. Even if the higher priority requests are executed faster, the waiting time may become exstensive in certain scenarios in which the lower priority requests are put on hold while a large chunk of higher priority requests get executed. Evenmore, the priority queue is constantly being updated with new requests which are enqueued in their corresponding queue. This poses a risk of neglect of lower priority requests. A work around for this could be introducing additional parameters, such as queue time, same priority chunk size, etc.
+Due to the performance having negligible difference - an even performing a tiny bit worse in the continuous.sh andf total.sh, the implementation was discarded from the final solution.
 
 # Final Solution
 
