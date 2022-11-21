@@ -56,6 +56,7 @@ void launch_nonblocking_IO_cached_thread_pool_server(struct Server *server, int 
     request_t req;
     mod_response_t *pres;
 
+    // init mutex and cond var 
     pthread_mutex_init(&queue_mutex, NULL);
     pthread_mutex_init(&done_queue_mutex, NULL);
     pthread_cond_init(&queue_cond_var, NULL);
@@ -185,6 +186,7 @@ void launch_nonblocking_IO_cached_split_thread_pool_server(struct Server *server
     request_t req;
     mod_response_t *pres;
 
+    // init mutex and cond var 
     pthread_mutex_init(&queue_mutex, NULL);
     pthread_mutex_init(&done_queue_mutex, NULL);
     pthread_cond_init(&queue_cond_var, NULL);
@@ -254,6 +256,7 @@ void launch_nonblocking_IO_cached_split_thread_pool_server(struct Server *server
                     }
 
                     close(sd);
+                    // remove sd from events 
                     epoll_ctl(epoll_fd, EPOLL_CTL_DEL, sd, NULL);
                     continue; 
                 }

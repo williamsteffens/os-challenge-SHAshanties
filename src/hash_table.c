@@ -1,3 +1,5 @@
+// inspired from https://www.youtube.com/watch?v=2Ti5yvumFTU&ab_channel=JacobSorber
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>

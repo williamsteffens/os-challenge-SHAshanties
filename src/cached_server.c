@@ -49,8 +49,10 @@ void launch_cached_thread_pool_server(struct Server *server, int nthreads)
     uint8_t buffer[PACKET_REQUEST_SIZE];
     request_t req;
 
+    // Create hash table 
     ht = create_htable();
 
+    // Init mutex and cond var
     pthread_mutex_init(&queue_mutex, NULL);
     pthread_mutex_init(&htable_mutex, NULL);
     pthread_cond_init(&queue_cond_var, NULL);
@@ -76,6 +78,7 @@ void launch_cached_thread_pool_server(struct Server *server, int nthreads)
             printf("[server][+] Connected with %s:%d\n", buffer, ntohs(cli_addr.sin_port));
         #endif
     
+        // read request
         bzero(buffer, PACKET_REQUEST_SIZE);
         if ((read(conn_sd, buffer, PACKET_REQUEST_SIZE)) == -1) {
             perror("[server][!] read() failed");
@@ -130,6 +133,7 @@ void *thread_pool_worker_cached()
     uint8_t guess_hash[SHA256_DIGEST_LENGTH];
 
     for (;;) {
+        // queue logic 
         pthread_mutex_lock(&queue_mutex);
             while ((ptask = dequeue_task()) == NULL)
                 pthread_cond_wait(&queue_cond_var, &queue_mutex);
@@ -148,16 +152,20 @@ void *thread_pool_worker_cached()
             printf("[server][?] task end:   %lu\n", task.end);
         #endif
 
+        // brute force hash
         response_t res = {0};
         for (res.num = task.start; res.num < task.end; ++res.num) {
             SHA256(res.bytes, sizeof(uint64_t), guess_hash);
             if (memcmp(task.hash, guess_hash, SHA256_DIGEST_LENGTH) == 0) {
                 res.num = htobe64(res.num);
+
+                // respond to client with hash
                 if ((write(task.sd, res.bytes, sizeof(uint64_t))) == -1) {
                     perror("[server][!] write() failed\n");
                     exit(-1);
                 }
 
+                // cache the hash
                 pthread_mutex_lock(&htable_mutex);
                     htable_set(ht, guess_hash, res.num);
                 pthread_mutex_unlock(&htable_mutex);

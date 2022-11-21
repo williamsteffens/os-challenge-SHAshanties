@@ -28,6 +28,7 @@ void launch_fork_per_req_server(struct Server *server)
             exit(-1);
         }
 
+        // fork and let child process process request
         if ((pid = fork()) < 0) {
             perror("[server][!] fork() failed\n");
             exit(-1);
@@ -51,6 +52,7 @@ void launch_preforked_server(struct Server *server, short nprocesses)
     struct sockaddr_in cli_addr;
     socklen = sizeof(cli_addr);
 
+    // Spawn child processes
     for (int i = 0; i < nprocesses; ++i) {
         if ((pid = fork()) < 0) {
             perror("[server][!] fork() failed");

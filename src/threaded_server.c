@@ -43,6 +43,7 @@ void launch_thread_per_client_server(struct Server *server)
         int *pconn = malloc(sizeof(int));
         *pconn = conn_sd;
 
+        // create thread with pointer to sd
         pthread_t t;
         pthread_create(&t, NULL, brute_force_SHA_threaded, pconn);
     }
@@ -56,9 +57,11 @@ void launch_thread_pool_server(struct Server *server, int nthreads)
     uint8_t buffer[PACKET_REQUEST_SIZE];
     request_t req;
 
+    // init mutex and cond var 
     pthread_mutex_init(&queue_mutex, NULL);
     pthread_cond_init(&queue_cond_var, NULL);
 
+    // create thread pool
     pthread_t thread_pool[nthreads];
     for (int i = 0; i < nthreads; ++i)
         pthread_create(&thread_pool[i], NULL, thread_pool_worker, NULL);
@@ -108,18 +111,11 @@ void *thread_pool_worker()
     uint8_t guess_hash[SHA256_DIGEST_LENGTH];
 
     for (;;) {
+        // queue logic
         pthread_mutex_lock(&queue_mutex);
             while ((ptask = dequeue_task()) == NULL)
                 pthread_cond_wait(&queue_cond_var, &queue_mutex);
         pthread_mutex_unlock(&queue_mutex);
-
-        // Busy waiting
-        // pthread_mutex_lock(&queue_mutex);
-        //     while ((ptask = dequeue_task()) == NULL) {
-        //         pthread_mutex_unlock(&queue_mutex);
-        //         pthread_mutex_lock(&queue_mutex);
-        //     }
-        // pthread_mutex_unlock(&queue_mutex);
 
         task_t task = *ptask;
         free(ptask);
@@ -134,6 +130,7 @@ void *thread_pool_worker()
             printf("[server][?] task end:   %lu\n", task.end);
         #endif
 
+        // brute force
         response_t res = {0};
         for (res.num = task.start; res.num < task.end; ++res.num) {
             SHA256(res.bytes, sizeof(uint64_t), guess_hash);
@@ -159,6 +156,7 @@ void sumbit_task(int sd, uint8_t hash[SHA256_DIGEST_LENGTH], uint64_t start, uin
     ptask->start = start;
     ptask->end = end;
 
+    // enqueue and signal waiting threads
     pthread_mutex_lock(&queue_mutex);
         enqueue_task(ptask);
     pthread_cond_signal(&queue_cond_var);

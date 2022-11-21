@@ -1,3 +1,5 @@
+// inpsired from https://www.youtube.com/watch?v=FcIubL92gaI&ab_channel=JacobSorber
+
 #include <stdlib.h>
 #include "simple_queue.h"
 
