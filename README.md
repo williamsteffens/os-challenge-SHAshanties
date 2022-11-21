@@ -404,7 +404,7 @@ By ordering requests in a priority queue, the requests with higher priority woul
 
 **Setup:**
 
-For testing the priority queue implementation, we have compared the priority_server with the cached_server, on which is was further implemented. The two servers were tested 3 times each using run-client-continuous.sh, run-client-lambda.sh and run-client-total.sh. The result for each client test is then calculated as the average for the 3 executions. By using the three different tests, we can compare the two servers on quantity intake and lambda value. If the hypothesis is to be confirmed, we should see a difference in the execution of run-client-lambda.sh.
+For testing the priority queue implementation, we have compared the priority_server with the cached_server, on which is was further implemented. The two servers were tested 3 times each using run-client-continuous.sh, run-client-lambda.sh and run-client-total.sh. The result for each client test is then calculated as the average for the 3 executions. By using the three different tests, we can compare the two servers on quantity intake and lambda value. If the hypothesis is to be confirmed, we should see a difference in the execution of run-client-lambda.sh. In these tests the lambda value has been set to 0.25, 0.17 and 0.1 respectivly.
 
 **Results:**
 
@@ -443,7 +443,11 @@ lambda  | noPrio avg. score | prio avg. score   |
 **Conclusion** 
 
 While not taking into account the waiting time of lower priority requests, the performance might be compromised by this side effect. Even if the higher priority requests are executed faster, the waiting time may become exstensive in certain scenarios in which the lower priority requests are put on hold while a large chunk of higher priority requests get executed. Evenmore, the priority queue is constantly being updated with new requests which are enqueued in their corresponding queue. This poses a risk of neglect of lower priority requests. A work around for this could be introducing additional parameters, such as queue time, same priority chunk size, etc.
-Due to the performance having negligible difference - an even performing a tiny bit worse in the continuous.sh andf total.sh, the implementation was discarded from the final solution.
+
+In the lambda tests, there was found to be a clear advantage in the priority queue as lambda is set lower.
+However, due to the performance having negligible difference - an even performing a tiny bit worse in the continuous.sh andf total.sh, the implementation was discarded from the final solution.
+
+As a final remark, the priority queue was in our server implemented in the hope of optimizing the performance rather than reliability. In case of future development, a more complex priority hiarichy could yield better results.
 
 # Final Solution
 
