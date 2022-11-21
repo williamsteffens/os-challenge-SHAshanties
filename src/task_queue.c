@@ -29,7 +29,7 @@ void enqueue_task_q(task_queue_t *q, task_t *t){
 task_t *dequeue_task_q(task_queue_t *q){
     // If priority queue is empty
     if(q->head == NULL){
-        printf("The queue with priority %u is empty!\n", q->priority);
+        //printf("The queue with priority %u is empty!\n", q->priority);
         return NULL;
     }
 

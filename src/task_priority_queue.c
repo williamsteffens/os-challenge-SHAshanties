@@ -10,7 +10,7 @@
 #include "task_priority_queue.h"
 
 void enqueue_queue(task_priority_queue_t *pq){
-    printf("Test 1\n");
+    //printf("Test 1\n");
     task_queue_t *new_queue = malloc(sizeof(task_queue_t));
     
     new_queue->next = NULL;
@@ -33,7 +33,7 @@ void enqueue_queue(task_priority_queue_t *pq){
 }
 
 void dequeue_queue(task_priority_queue_t *pq){
-    printf("Test 2\n");
+    //printf("Test 2\n");
     // If priority queue is empty
     if(pq->head == NULL){
         printf("The priority queue is empty!\n");
@@ -60,7 +60,7 @@ void dequeue_queue(task_priority_queue_t *pq){
 }
 
 void init_priority_queue(task_priority_queue_t *pq, int n){
-    printf("Test 3\n");
+    //printf("Test 3\n");
     // Initialise pq with n queues
     for(int i = 0; i < n; i++){
         enqueue_queue(pq);
@@ -68,7 +68,7 @@ void init_priority_queue(task_priority_queue_t *pq, int n){
 }
 
 void free_priority_queue(task_priority_queue_t *pq){
-    printf("Test 4\n");
+    //printf("Test 4\n");
     while(pq->head != NULL){
         dequeue_queue(pq);
     }

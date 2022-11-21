@@ -36,11 +36,11 @@ int main(int argc, char *argv[])
 
     // Cached server
     // ------------------------------
-    launch_cached_thread_pool_server(&server, 4);
+    //launch_cached_thread_pool_server(&server, 4);
 
     // Split Request server
     // ------------------------------
-    //launch_split_req_cached_thread_pool_server(&server, 4);
+    launch_split_req_cached_thread_pool_server(&server, 4);
 
     // Nonblocking I/O server
     // ------------------------------
