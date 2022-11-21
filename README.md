@@ -415,7 +415,9 @@ Aleksandar
 
 As more and more requests are sent to the server, a queue is inbound to happen. At this point, the implementation has to decide on which requests get to be executed first - and by which parameters. When a request is recieved it has a priority value attatched to it. This indicates the importance of execution and its priority over other requests with lower priority. 
 
-Without any system to prioritize higher priority requests, the execution would be dictated simply by _"First-In-First-Out"_-principle, or **F.I.F.O**, with no regard for prioriisation. This could impact the overall benchmark performance in regards to a lower _lamba_-value.   
+Without any implemented logic for prioritizing higher priority requests, the execution would be dictated simply by _"First-In-First-Out"_-principle, or **F.I.F.O**, with no regard for prioritization. This could impact the overall benchmark performance in regards to a lower _lamba_-value. 
+
+The mindset we had going into this experiment was to improve the performance by building on top of the cache pooled thread server. As such, we had already reached 100% reliability, thus the goal for this implementation was to analyse and determine the influence that prioritization had on the request handling. 
 
 **Hypothesis:** 
 
@@ -482,8 +484,6 @@ While not taking into account the waiting time of lower priority requests, the p
 
 In the lambda tests, there was found to be a clear advantage in the priority queue, where the total score is reduced by aprox. 49%.
 However, due to the performance having negligible difference - an even performing a tiny bit worse in the continuous.sh andf total.sh, the implementation was discarded from the final solution.
-
-As a final remark, the priority queue was in our server implemented in the hope of optimizing the performance rather than reliability. In case of future development, a more complex priority hiarichy could yield better results.
 
 # Final Solution
 
