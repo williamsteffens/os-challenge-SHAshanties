@@ -5,6 +5,9 @@
 # Table of Contents
 
 - [General Information](#generalinformation)
+    - [Group Members](#group-members)
+    - [Folder and Branch Structure](#folder-and-branch-structure)
+    - [Experiments](#experiments)
 - [Experiment 1 - Multiprocessing vs. Multithreading and ***On the Fly*** vs. ***Pooled***](#experiment-1---multiprocessing-vs-multithreading-and-on-the-fly-vs-pooled)
     - [Experiment 1a - Determining the Optimal Number of Processes of a Pre-Forked Server](#experiment-1a---determining-the-optimal-number-of-processes-of-a-pre-forked-server)
     - [Experiment 1b - Determining the Optimal Number of Threads of a Thread Pool Server](#experiment-1b---determining-the-optimal-number-of-threads-of-a-thread-pool-server)
@@ -24,13 +27,36 @@ This sections contains general information regarding the project and should be r
 other sections can be read in any order, but as the implementation has been iteratively developed reading them in sequence 
 is recommended. 
 
-## Testing 
+<br />
 
-variations of the continuous 
-different seeds. 
+## Group Members 
 
-files previous not mentioned redundant 
+The SHAshanties group consists of: 
+- William Steffens, s185369, wffs@dtu.dk (committed under the username williamsteffens)
+- 
 
+
+
+<br />
+
+## Folder and Branch Structure
+
+The folder structure of the final submission is as follows: 
+- src - All of the source code can be found under the "src" folder. The main-function in `main.c` acts as the entry point of the server, where the underlying TCP server will be initialized by `server_constructor()`, after which a server loop can be chosen uncommenting a `launch_x_server()` function, e.g. `launch_preforked_server()`. The server loop launchers are located in their appropriate source file, e.g., `launch_preforked_server()` can be found in `forked_server.c`, and `launch_thread_pool_server()` can be found in `threaded_server.c`, etc.. 
+- client - All of the client configurations used for testing can be found under the "client" folder. 
+- experiments - For all of the conducted experiments, the data, and the plots produced can be found under the "experiments" folder.
+- Makefile - The makefile can be found at the git root directory, and the "obj" folder was used to ease the make progress. 
+- server - The final solution can be found at the git root directory as "server".
+
+No branch structure has been enforced for the final submission, i.e., only the main branch should be of interest.
+
+<br />
+
+## Experiments
+
+For the experiments the code used has been listed as **Relevent Files**, and can all be found inside of the source folder.
+
+For clarification: the variations of client configurations used in the experiments are variations of the continuous client configurations.   
 
 <br /> 
 <br /> 
