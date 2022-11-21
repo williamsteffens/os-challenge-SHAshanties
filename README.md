@@ -503,8 +503,12 @@ Second step was to determine whether to create a thread for each recieved reques
 
 To handle potential repeated requests, the caching was tested by implementing a hash table. This solution ment, that the server in some cases would be able to respond immidiately and save execution time, by skipping the hashing work load. The results from experiment 2 concluded, that caching the requests indead cut the execution time significantly and thus, improved the overall score dramatically.  
 
+**Splitting**
+
+**Nonblocking I/O**
 
 **Prioritization**
+
 As the requests are recieved by the server, they are executed in a F.I.F.O manner. This means that the requests' priority has no role in the order of which requests get to be executed when. To test the effect of prioritization on the server we implemented a priority queue, which controlled the flow of the requsts' execution on a "highest priority first"-principle. In experiment 5 it was deducted and concluded, that prioritization can have a visible effect. However, this comes down to the processing power of the machine hosting the server, in which case a weaker machine gains more from the prioritization than a more powerfull one. Taking this into account, it was concluded that the final version would be tested on a powerfull processor and thus the prioritization was discarded.   
 
 more time scheduling
@@ -512,8 +516,7 @@ more time scheduling
 attribute 
 
 panic mode 
+
 but split 
 
 hash table vs array
-
-reflect here? from experiment ... and from experiment ...
