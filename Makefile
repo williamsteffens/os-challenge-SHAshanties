@@ -1,5 +1,5 @@
 CC = gcc
-OPT = -O0
+OPT = -O3
 CFLAGS = 
 LIBS = -I /opt/ssl/include/ -L /opt/ssl/lib/ -lcrypto -pthread
 
