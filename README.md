@@ -506,27 +506,23 @@ This is where the performance had negligible difference - an even performing a t
 # Final Solution
 To summarize the development leading to our final server version, we conducted experiments in an incremental manner, improving the server step by step.
 
-**Process Approach**
-
+### **Process Approach**
 First step was to decide between Multi-processing and Multi-threading. The divede between processors in Multi-processing invites the chance for idleness and waiting time, whereas Multi-threading provides a work around in the form of its threads sharing the same code base, meaning that down time is removed. From experiment 1c, it was found, that Multi-threading had a clear advantage in the server's performance and as such it became our method for process handling.  
 
-**On the fly vs. Pooled**
-
+### **On the fly vs. Pooled**
 Second step was to determine whether to create a thread for each recieved request, i.e. _On the Fly_, or to initialize a fixed number of reusable pre-threaded threads. The optimal number of pre-threaded threads was tested and found in experiment 1b to be 4 threads. Finally this was put to the test in experiment 1c, where it was concluded that the thread pool solution had the best performance and was thus adopted into the implemenation. 
 
-**Caching**
-
+### **Caching**
 To handle potential repeated requests, the caching was tested by implementing a hash table. This solution ment, that the server in some cases would be able to respond immidiately and save execution time, by skipping the hashing work load. The results from experiment 2 concluded, that caching the requests indead cut the execution time significantly and thus, improved the overall score dramatically.  
 
-**Splitting**
+### **Splitting**
 
-**Nonblocking I/O**
+### **Nonblocking I/O**
 
-**Prioritization**
-
+### **Prioritization**
 As the requests are recieved by the server, they are executed in a F.I.F.O manner. This means that the requests' priority has no role in the order of which requests get to be executed when. To test the effect of prioritization on the server we implemented a priority queue, which controlled the flow of the requsts' execution on a "highest priority first"-principle. In experiment 5 it was deducted and concluded, that prioritization can have a visible effect. However, this comes down to the processing power of the machine hosting the server, in which case a weaker machine gains more from the prioritization than a more powerfull one. Taking this into account, it was concluded that the final version would be tested on a powerfull processor and thus the prioritization was discarded.   
 
-**Final Version Server**
+### **Final Version Server**
 Our final server implementation is a Threadpooled Multi-threading server with request caching. 
 
 
