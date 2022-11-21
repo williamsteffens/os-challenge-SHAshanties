@@ -5,14 +5,14 @@
 # Table of Contents
 
 - [General Information](#generalinformation)
-- [Experiment 1 - Multiprocessing vs. Multithreading and ***On the Fly*** vs. ***Pooled***](#e1)
-    - [Experiment 1a - Determining the Optimal Number of Processes of a Pre-Forked Server](#e1b)
-    - [Experiment 1b - Determining the Optimal Number of Threads of a Thread Pool Server](#e1b)
-    - [Experiment 1c -](#e1b)
-- [Experiment 2 - Caching Requests](#e2)
-- [Experiment 3 - Splitting the Request Into Tasks](#e2)
-- [Experiment 4 - Nonblocking I/O](#e2)
-- [Experiment 5 - Priority Queue](#e2)
+- [Experiment 1 - Multiprocessing vs. Multithreading and ***On the Fly*** vs. ***Pooled***](#experiment-1---multiprocessing-vs-multithreading-and-on-the-fly-vs-pooled)
+    - [Experiment 1a - Determining the Optimal Number of Processes of a Pre-Forked Server](#experiment-1a---determining-the-optimal-number-of-processes-of-a-pre-forked-server)
+    - [Experiment 1b - Determining the Optimal Number of Threads of a Thread Pool Server](#experiment-1b---determining-the-optimal-number-of-threads-of-a-thread-pool-server)
+    - [Experiment 1c - 4-way Comparison of Multiprocessing vs. Multithreading and ***On the Fly*** vs. ***Pooled***](#experiment-1c---4-way-comparison-of-multiprocessing-vs-multithreading-and-on-the-fly-vs-pooled)
+- [Experiment 2 - Caching Requests](#experiment-2---caching-requests)
+- [Experiment 3 - Splitting the Request Into Tasks](#experiment-3---splitting-the-request-into-tasks)
+- [Experiment 4 - Nonblocking I/O](#experiment-4---nonblocking-io)
+- [Experiment 5 - Priority Queue](#experiment-5---priority-queue)
 - [Final Solution](#final-solution)
 
 <br /> 
