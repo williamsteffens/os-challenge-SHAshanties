@@ -29,7 +29,8 @@
 #include "nonblocking_IO_server.h"
 
 
-#define MAX_EVENTS      5
+
+#define MAX_EVENTS 5
 
 
 static void epoll_ctl_add(int epoll_fd, int fd, uint32_t events)
@@ -42,7 +43,6 @@ static void epoll_ctl_add(int epoll_fd, int fd, uint32_t events)
 		exit(-1);
 	}
 }
-
 
 void launch_nonblocking_IO_cached_thread_pool_server(struct Server *server, int nthreads)
 {
@@ -171,7 +171,6 @@ void launch_nonblocking_IO_cached_thread_pool_server(struct Server *server, int 
         pthread_mutex_unlock(&done_queue_mutex);
     }
 }
-
 
 void launch_nonblocking_IO_cached_split_thread_pool_server(struct Server *server, int nthreads)
 {
@@ -302,8 +301,6 @@ void launch_nonblocking_IO_cached_split_thread_pool_server(struct Server *server
     }
 }
 
-
-
 void *thread_pool_nonblocking_IO_cached_worker()
 {
     pthread_detach(pthread_self());
@@ -353,7 +350,6 @@ void *thread_pool_nonblocking_IO_cached_worker()
         }
     }
 }
-
 
 void *thread_pool_nonblocking_IO_cached_split_worker()
 {

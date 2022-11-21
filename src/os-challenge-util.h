@@ -11,7 +11,6 @@
 #endif
 
 #include <openssl/sha.h>
-#include <stdbool.h>
 
 
 
@@ -23,8 +22,6 @@
 
 #define PACKET_RESPONSE_SIZE          8
 #define PACKET_RESPONSE_ANSWER_OFFSET 0
-
-
 
 typedef struct request {
   int      sd;
@@ -47,10 +44,3 @@ typedef struct mod_response {
     uint8_t  bytes[8];
   } reverse_hash;
 } mod_response_t;
-
-
-request_t decode_req(int req_socket, uint8_t buffer[PACKET_REQUEST_SIZE]);
-
-request_t *decode_preq(int req_socket, uint8_t buffer[PACKET_REQUEST_SIZE]);
-
-void display_request(uint8_t buffer[PACKET_REQUEST_SIZE], request_t req);

@@ -11,8 +11,9 @@
 
 #include "hash_table.h"
 
-#define TABLE_SIZE 1000
 
+
+#define TABLE_SIZE 1000
 
 
 unsigned long hash(uint8_t* key)

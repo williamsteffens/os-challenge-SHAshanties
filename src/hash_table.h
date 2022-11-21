@@ -3,6 +3,7 @@
 #include <stdbool.h>
 
 
+
 typedef struct entry_t {
     uint8_t* key[SHA256_DIGEST_LENGTH];
     uint64_t val;
@@ -12,7 +13,6 @@ typedef struct entry_t {
 typedef struct {
     entry_t** entries;
 } htable_t; 
-
 
 
 htable_t* create_htable();

@@ -19,5 +19,4 @@ typedef struct task_queue{
 void enqueue_task_q(task_queue_t *q, task_t *t);
 task_t *dequeue_task_q(task_queue_t *q);
 
-
 #endif // TASK_QUEUE_H

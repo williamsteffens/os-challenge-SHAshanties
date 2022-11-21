@@ -43,6 +43,7 @@
 #include "task_priority_queue.h"
 
 
+
 void sumbit_priority_task(int sd, uint8_t hash[SHA256_DIGEST_LENGTH], uint64_t start, uint64_t end, uint8_t prio, task_priority_queue_t *pq)
 {
     task_t *ptask = malloc(sizeof(task_t));
@@ -57,7 +58,6 @@ void sumbit_priority_task(int sd, uint8_t hash[SHA256_DIGEST_LENGTH], uint64_t s
     pthread_cond_signal(&queue_cond_var);
     pthread_mutex_unlock(&queue_mutex);
 }
-
 
 void launch_priority_cached_thread_pool_server(struct Server *server, int nthreads)
 {

@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include "os-challenge-util.h"
-//#include "request_node.h"
 #include "task_queue.h"
 
 typedef struct task_priority_queue{

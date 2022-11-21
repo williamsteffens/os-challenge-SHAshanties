@@ -3,6 +3,8 @@
 
 #include <stdio.h>
 
+
+
 node_t* head = NULL; 
 node_t* butt = NULL; 
 
@@ -32,7 +34,6 @@ int *dequeue()
     free(temp);
     return result; 
 }
-
 
 
 task_node_t* head_task = NULL; 
@@ -66,7 +67,6 @@ task_t *dequeue_task()
 }
 
 
-
 request_node_t* head_request = NULL; 
 request_node_t* butt_request = NULL; 
 
@@ -96,7 +96,6 @@ request_t *dequeue_req()
     free(temp);
     return result; 
 }
-
 
 
 mod_response_node_t* head_mod_response = NULL; 

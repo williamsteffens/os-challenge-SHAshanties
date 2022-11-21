@@ -30,7 +30,6 @@
 #include <sched.h>
 #include <sys/wait.h>
 
-
 #include <assert.h>
 #include <sched.h>
 #include <stdbool.h>

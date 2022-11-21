@@ -1,7 +1,3 @@
-/*
-    server.c
-*/
-
 #include "server.h"
 #include <stdio.h>
 #include <stdlib.h>

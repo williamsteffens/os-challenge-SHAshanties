@@ -14,7 +14,6 @@
 
 
 
-
 void launch_fork_per_req_server(struct Server *server)
 {
     int conn_sd, socklen;

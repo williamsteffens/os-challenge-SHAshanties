@@ -27,29 +27,6 @@
 #include "split_request_server.h"
 
 
-void* brute_force_SHA_threaded(void* pconn_sd);
-void* brute_force_SHA_thread_pool_busy_worker();
-void* brute_force_SHA_thread_pool_worker();
-void* thread_pool_worker();
-void* worker_thread();
-
-
-
-void sumbit_task(int sd, uint8_t hash[SHA256_DIGEST_LENGTH], uint64_t start, uint64_t end)
-{
-    task_t *ptask = malloc(sizeof(task_t));
-    ptask->sd = sd; 
-    memcpy(&ptask->hash, hash, SHA256_DIGEST_LENGTH);
-    ptask->start = start;
-    ptask->end = end;
-
-    pthread_mutex_lock(&queue_mutex);
-        enqueue_task(ptask);
-    pthread_cond_signal(&queue_cond_var);
-    pthread_mutex_unlock(&queue_mutex);
-}
-
-
 
 void launch_thread_per_client_server(struct Server *server)
 {
@@ -174,17 +151,19 @@ void *thread_pool_worker()
     }
 }
 
+void sumbit_task(int sd, uint8_t hash[SHA256_DIGEST_LENGTH], uint64_t start, uint64_t end)
+{
+    task_t *ptask = malloc(sizeof(task_t));
+    ptask->sd = sd; 
+    memcpy(&ptask->hash, hash, SHA256_DIGEST_LENGTH);
+    ptask->start = start;
+    ptask->end = end;
 
-
-
-
-
-
-
-
-
-
-
+    pthread_mutex_lock(&queue_mutex);
+        enqueue_task(ptask);
+    pthread_cond_signal(&queue_cond_var);
+    pthread_mutex_unlock(&queue_mutex);
+}
 
 void* brute_force_SHA_threaded(void *pconn_sd)
 {
@@ -244,7 +223,3 @@ void* brute_force_SHA_threaded(void *pconn_sd)
     // Close the connection when done
     close(conn_sd);
 }
-
-
-
-

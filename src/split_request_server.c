@@ -32,33 +32,6 @@
 
 
 
-void sumbit_split_task(int sd, int id, uint8_t hash[SHA256_DIGEST_LENGTH], uint64_t start, uint64_t end)
-{
-    task_t *ptask = malloc(sizeof(task_t));
-    ptask->sd = sd; 
-    ptask->id = id;
-    memcpy(&ptask->hash, hash, SHA256_DIGEST_LENGTH);
-    ptask->start = start;
-    ptask->end = end;
-
-    pthread_mutex_lock(&queue_mutex);
-        enqueue_task(ptask);
-    pthread_cond_signal(&queue_cond_var);
-    pthread_mutex_unlock(&queue_mutex);
-}
-
-
-void split_and_sumbit_task(int nthreads, int sd, int id, uint8_t hash[SHA256_DIGEST_LENGTH], uint64_t start, uint64_t end)
-{
-    unsigned int chunk = ceil((end - start) / nthreads);
-
-    for (int i = 0; i < nthreads - 1; ++i)
-        sumbit_split_task(sd, id, hash, start + i * chunk, start + (i + 1) * chunk);
-
-    sumbit_split_task(sd, id, hash, start + (nthreads - 1) * chunk, end);
-}
-
-
 void launch_split_req_cached_thread_pool_server(struct Server *server, int nthreads)
 {
     int conn_sd, socklen;
@@ -187,4 +160,31 @@ void *thread_pool_worker_split_cached(void *arg)
             }
         }
     }
+}
+
+
+void sumbit_split_task(int sd, int id, uint8_t hash[SHA256_DIGEST_LENGTH], uint64_t start, uint64_t end)
+{
+    task_t *ptask = malloc(sizeof(task_t));
+    ptask->sd = sd; 
+    ptask->id = id;
+    memcpy(&ptask->hash, hash, SHA256_DIGEST_LENGTH);
+    ptask->start = start;
+    ptask->end = end;
+
+    pthread_mutex_lock(&queue_mutex);
+        enqueue_task(ptask);
+    pthread_cond_signal(&queue_cond_var);
+    pthread_mutex_unlock(&queue_mutex);
+}
+
+
+void split_and_sumbit_task(int nthreads, int sd, int id, uint8_t hash[SHA256_DIGEST_LENGTH], uint64_t start, uint64_t end)
+{
+    unsigned int chunk = ceil((end - start) / nthreads);
+
+    for (int i = 0; i < nthreads - 1; ++i)
+        sumbit_split_task(sd, id, hash, start + i * chunk, start + (i + 1) * chunk);
+
+    sumbit_split_task(sd, id, hash, start + (nthreads - 1) * chunk, end);
 }
