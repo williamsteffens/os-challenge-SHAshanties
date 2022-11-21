@@ -24,6 +24,14 @@ This sections contains general information regarding the project and should be r
 other sections can be read in any order, but as the implementation has been iteratively developed reading them in sequence 
 is recommended. 
 
+## Testing 
+
+variations of the continuous 
+different seeds. 
+
+
+
+
 <br /> 
 <br /> 
 
@@ -32,13 +40,11 @@ is recommended.
 
 William
 
-
 **Motivation:**
 
 Our benchmark server was implemented using a "fork per request" approach, meaning that for each request the server would create a new process to perform the reverse hashing, after which the process would terminate. The overhead associated with creating a new process per request is not necessarily cheap in regards to performance, and using a different approach might also allow for better parallelization, so the first experiments were dedicated to investigating alternatives to this method.
 
-
-The obvious alternative to multiprocessing is multithreading, and for both, two versions were experimented with, which we will refer to as ***On the Fly*** and ***Pooled***. ***On the Fly*** refers to creating a new process/thread for each request, while ***Pooled*** refers to having some fixed number of pre-forked/pre-threaded processes/threads ready for requests which will be reused with the intention of cutting down on the spawning related overhead and utilizing the hardware more efficiently. 
+The obvious alternative to multiprocessing is multithreading, and for both, two versions were experimented with, which we will refer to as ***On the Fly*** and ***Pooled***. ***On the Fly*** refers to creating a new process/thread for each request, while ***Pooled*** refers to having some fixed number of pre-forked/pre-threaded processes/threads ready for requests which will be reused with the intention of cutting down on the spawning related overhead and utilizing the hardware more efficiently. All four versions were experimented with simultaneously as to not introduce a bias that would for instance conclude ***On the fly*** multithreading beats ***On the Fly*** multiprocessing, and then continue to experiment with ***On the Fly*** multithreading and ***Pooled*** multithreading without considering ***Pooled*** multiprocessing. 
 
 Before comparing the four approaches, a vital property of the ***Pooled*** versions had to be determined, namely the size of the pools, i.e. the number of pre-created processes/threads. The reasons for doing so builds on the assumption that some pool sizes grant better performance than others, and since the intention is to identify an optimal server, comparing a suboptimal ***Pooled*** server to a ***On the Fly*** server wouldn't make sense. Determining the optimal number of processes and threads for the ***Pooled*** multiprocessing server and the ***Pooled*** multithreading server, while testing the assumption that the pool sizes influence server performance, was the goal of the experiments 1a and 1b, respectively. 
 
@@ -48,27 +54,29 @@ Before comparing the four approaches, a vital property of the ***Pooled*** versi
 ## Experiment 1a - Determining the Optimal Number of Processes of a Pre-Forked Server 
 **Hypothesis:** 
 
-The number of processes of a pre-forked server significantly influences the server's performance. 
+The number of processes of a pre-forked server significantly influences the server's performance.
 
-**Relevant files:**
+**Relevant files/folders:**
 
+- src/brute_force.c
+- src/brute_force.h
 - src/forked_server.c
 - src/forked_server.h
-- client/run-client-milestone.sh
-- test/experiments/e1/e1a/
+- client/run-client-continuous.sh
+- experiments/e1/e1a/
 
 **Setup:**
 
-For this experiment the run-client-continuous configuration was executed 3 times for every number of processes from 1 to 10, from 10 to 25 in steps of 5, and from 25 to 100 in steps of 25 (i.e., 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 50, 75, and 100) and the average was then taken of the 3 executions. This was done in order to cover a wide range of options for the number of processes, that would hopefully make some pattern emerge that could be concluded on in regards to how the number of pre-forked processes effected performance. 
+For this experiment the run-client-continuous configuration was executed 3 times for every number of processes from 1 to 10, from 10 to 25 in steps of 5, and from 25 to 100 in steps of 25 (i.e., 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 50, 75, and 100) and the average was then taken of the 3 executions. This was done in order to cover a wide range of options for the number of processes, that would hopefully make some pattern emerge that could be concluded on in regards to how the number of pre-forked processes effected the server's performance. 
 
 **Results:**
 
-The average score of the pre-forked server vs. number of processes used can be seen plotted in Figure 1, and the numerical values can be seen in Table 1.
+The average score of the pre-forked server vs. number of processes used, nprocesses, can be seen plotted in Figure 1, and the numerical values can be seen listed in Table 1.
 
 <center>
 
-![Figure 1](/experiments/e1_otf_vs_pooled/e1a/plot/preforked_e1a.png "Figure 1 - figure text")
-**Figure 1** - Number of processes, nprocesses plotted against the average score of 3 runs of the run-client-continuous configuration. 
+![Figure 1](/experiments/e1_otf_vs_pooled/e1a/plot/preforked_e1a.png "Figure 1 - Number of processes, nprocesses, plotted against the average score of 3 runs of the run-client-continuous configuration for the pre-forked server.")
+**Figure 1** - Number of processes, nprocesses, plotted against the average score of 3 runs of the run-client-continuous configuration for the pre-forked server. 
 
 </center>
 
@@ -93,43 +101,43 @@ nprocesses | avg. score
 75         | 39.471.807
 100        | 37.809.006
 
-**Table 1** - Number of processes, nprocesses and the corresponding the average score of 3 runs of the run-client-continuous configuration.
+**Table 1** - Number of processes, nprocesses, and the corresponding average score of the 3 runs of the run-client-continuous configuration for the pre-forked server.
 
 </center>
+<br /> 
 
+From the result a pattern emerged indicating that 1) the number of processes greatly influenced the performance of the server, with 1 process scoring over 7 times higher than 4 processes, and 2) that the optimal number of processes to use for the pre-forked server was 4, which led us to accept the hypothesis. 4 processes being optimal was most likely explained by the VM the server was running ontop of had 4 CPUs, which theory should result in less context switching while utilizing all 4 CPUs.      
 
-
-
-
-
-
+Based on the results from experiment 1a, it was decided to use 4 pre-forked processes for comparing the four approaches.
 
 <br /> 
 
 ## Experiment 1b - Determining the Optimal Number of Threads of a Thread Pool Server 
 **Hypothesis:** 
 
-The number of processes of a pre-forked server significantly influences the server's performance. 
+The number of threads of a thread pool server significantly influences the server's performance. 
 
 **Relevant files:**
 
-- src/forked_server.c
-- src/forked_server.h
-- client/run-client-milestone.sh
-- test/experiments/e1/e1a/
+- src/threaded_server.c
+- src/threaded_server.h
+- src/simple_queue.c
+- src/simple_queue.h
+- client/run-client-continuous.sh
+- experiments/e1/e1b/
 
 **Setup:**
 
-For this experiment the run-client-continuous configuration was executed 3 times for every number of processes from 1 to 10, from 10 to 25 in steps of 5, and from 25 to 100 in steps of 25 (i.e., 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 50, 75, and 100) and the average was then taken of the 3 executions. This was done in order to cover a wide range of options for the number of processes, that would hopefully make some pattern emerge that could be concluded on in regards to how the number of pre-forked processes effected performance. 
+Similar to experiment 1a, the setup involved running the run-client-continuous configuration 3 times for every number of threads from 1 to 10, from 10 to 25 in steps of 5, and from 25 to 100 in steps of 25 and then take the average of those 3 executions. Again, this was done in order to cover a wide range of options for the number of threads, that would hopefully make some pattern emerge that could be concluded on in regards to how the pool size of a thread pool server effected performance. 
 
 **Results:**
 
-The average score of the pre-forked server vs. number of processes used can be seen plotted in Figure 1, as well as in Table 1.
+The average score of the thread pool server vs. number of threads used can be seen plotted in Figure 2, and the numerical values can be seen listed in Table 2.
 
 <center>
 
-![Figure 2](/experiments/e1_otf_vs_pooled/e1b/plot/threadpool_e1b.png "Figure 2 - figure text")
-**Figure 2** - Number of processes, nprocesses plotted against the average score of 3 runs of the run-client-continuous configuration. 
+![Figure 2](/experiments/e1_otf_vs_pooled/e1b/plot/threadpool_e1b.png "Figure 2 - Number of threads, nthreads, plotted against the average score of 3 runs of the run-client-continuous configuration.")
+**Figure 2** - Number of threads, nthreads, plotted against the average score of 3 runs of the run-client-continuous configuration. 
 
 </center>
 
@@ -154,40 +162,54 @@ nthreads   | avg. score
 75         | 40.486.609
 100        | 41.152.935
 
-**Table 2** - Number of processes, nprocesses and the corresponding the average score of 3 runs of the run-client-continuous configuration.
+**Table 2** - Number of threads, nthreads, and the corresponding average score of 3 runs of the run-client-continuous configuration for the thread pool server.
 
 </center>
 
+Similar to experiment 1b, the number of threads used seemed to greatly influence the server's performance, and the optimal number was again found to be 4 for the number of threads (again, most likely due to the underlaying (virtual) hardware), and the hypothesis was accepted.  
+
+Based on the results from experiment 1b, it was decided to use a thread pool size of 4 threads for comparing the four approaches.
 
 <br /> 
 
 ## Experiment 1c - 4-way Comparison of Multiprocessing vs. Multithreading and ***On the Fly*** vs. ***Pooled***
+
+Having determinded the optimal sizes of the ***Pooled*** versions, 4 processes for the pre-forked server and 4 threads for the thread pool server, an overall comparison of multiprocessing and multithreading was conducted, to determine the more optimal of the four. 
+
 **Hypothesis:** 
 
-The number of processes of a pre-forked server significantly influences the server's performance. 
+Using multiprocessing (***On the Fly*** and ***Pooled***) will lead to a difference in server performance compared to using multithreading (***On the Fly*** and ***Pooled***) from which a more optimal server can be identified.
 
 **Relevant files:**
 
+- src/brute_force.c
+- src/brute_force.h
 - src/forked_server.c
 - src/forked_server.h
-- client/run-client-milestone.sh
-- test/experiments/e1/e1a/
+- src/threaded_server.c
+- src/threaded_server.h
+- src/simple_queue.c
+- src/simple_queue.h
+- client/run-client-continuous.sh
+- client/run-client-test-delay.sh
+- client/run-client-test-difficulty.sh
+- client/run-client-test-total.sh
+- experiments/e1/e1c/
 
 **Setup:**
 
-For this experiment the run-client-continuous configuration was executed 3 times for every number of processes from 1 to 10, from 10 to 25 in steps of 5, and from 25 to 100 in steps of 25 (i.e., 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 50, 75, and 100) and the average was then taken of the 3 executions. This was done in order to cover a wide range of options for the number of processes, that would hopefully make some pattern emerge that could be concluded on in regards to how the number of pre-forked processes effected performance. 
+In order to identify the more optimal server in regards to the challenge, as well as to identify potential downfalls of an approach, the four approaches were tested against four different client configurations: one using the continuous configuration, one with decreased delay (100.000), one with increased difficulty (60.000.000), and one mimicking the final challenge (at the time of testing, the final challenge was a total of 1000 requests, instead of the 500 it was change to. This experiment uses 1000 requests for the configuration mimicking the final challenge, while it was changed to 500 for the other experiments). 
 
-husk at sige at det er 1000 her, før ændringen i final 
-
+Each configuration was executed 3 times per server and the average score of the 3 executions was used for making the comparisons. 
 
 **Results:**
 
-The average score of the pre-forked server vs. number of processes used can be seen plotted in Figure 1, as well as in Table 1.
+The average score of the four server approaches for each of the client configurations can be seen plotted in Figure 3, and the numerical values can be seen listed in Table 3.
 
 <center>
 
-![Figure 3](/experiments/e1_otf_vs_pooled/e1c/plot/compare_e1c.png "Figure 3 - figure text")
-**Figure 3** - Number of processes, nprocesses plotted against the average score of 3 runs of the run-client-continuous configuration. 
+![Figure 3](/experiments/e1_otf_vs_pooled/e1c/plot/compare_e1c.png "Figure 3 - Average score plotted (3 runs each) against the four server approaches for the four client configurations.")
+**Figure 3** - Average score plotted (3 runs each) against the four server approaches for the four client configurations.
 
 </center>
 
@@ -200,13 +222,13 @@ otfThread    | 40.984.470                    | 79.879.488               | 114.78
 pooledProc   | 26.952.785                    | 56.119.947               | 86.149.445                    | 175.179.777
 pooledThread | 24.848.807                    | 54.961.863               | 80.417.041                    | 168.785.700
 
-**Table 3** - Number of processes, nprocesses and the corresponding the average score of 3 runs of the run-client-continuous configuration.
+**Table 3** - Average score of the four server approaches (3 runs each) for the four client configurations configurations.
 
 </center>
 
+From the results, it was very clear that the ***Pooled*** versions outperformed the ***On the Fly*** versions across all four configurations. The ***Pooled*** versions were closer in terms of average score, although the thread pool version proved to be the most optimal across all four client configurations.
 
-
-
+Based on the results the fork per request approach was substituted with the thread pool approach for the server implementaion. 
 
 <br /> 
 <br /> 
@@ -214,46 +236,57 @@ pooledThread | 24.848.807                    | 54.961.863               | 80.417
 # Experiment 2 - Caching Requests
 **Responsible:** 
 
+William
+
 **Motivation:**
+
+Given that the client had a chance to send repeated requests, an experiment was dedicated to investigating whether or not caching the requests would lead to increased server performance, as the server would then be able to respond immediately rather than spending resources re-brute forcing the hash. 
+
+This caching functionality was implemented using a hash table with a 1000 buckets to minimize the chance of conclusions that would lead to resources being spend on collision resolution. 
 
 **Hypothesis:** 
 
-The number of processes of a pre-forked server significantly influences the server's performance. 
+Caching requests and using those to respond to repeated requests would increase server performance, by significantly decreasing the respond time, while allowing resources to be used to brute force non-reversed hashes.   
 
 **Relevant files:**
 
-- src/forked_server.c
-- src/forked_server.h
+- src/hash_table.c
+- src/hash_table.h
+- src/cached_server.c
+- src/cached_server.h
 - client/run-client-milestone.sh
 - test/experiments/e1/e1a/
 
 **Setup:**
 
-For this experiment the run-client-continuous configuration was executed 3 times for every number of processes from 1 to 10, from 10 to 25 in steps of 5, and from 25 to 100 in steps of 25 (i.e., 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 50, 75, and 100) and the average was then taken of the 3 executions. This was done in order to cover a wide range of options for the number of processes, that would hopefully make some pattern emerge that could be concluded on in regards to how the number of pre-forked processes effected performance. 
+For testing the caching functionality, the thread pool server (the currently most optimal server) was executed against three client configurations with (refered to as Cache in Figure 4 and Table 4) and without (refered to as noCache in Figure 4 and Table 4) caching to determine if the caching improved the server's performance or not. The three client configurations were 
+
 
 **Results:**
 
-The average score of the pre-forked server vs. number of processes used can be seen plotted in Figure 1, as well as in Table 1.
+The average score of the pre-forked server vs. number of processes used can be seen plotted in Figure 4, and the numerical values can be seen listed in Table 4.
 
 <center>
 
 ![Figure 4](/experiments/e2_cache/plot/cached_vs_thread_e2.png "Figure 4 - figure text")
-**Figure 4** - Number of processes, nprocesses plotted against the average score of 3 runs of the run-client-continuous configuration. 
+**Figure 4** - The average score of the thread pool server with (Cache) and without (noCa) caching (3 runs) for the three client configurations.
 
 </center>
 
 <center>
 
-server       | avg. score continuous config. | avg. score delay config. | avg. score rep config.   | avg. score total config.
-:---         |:---:                          |:---:                     |:---:                     |:---:
-noCache      | 23.095.305                    | 52.696.637               | 27.749.345               | 79.471.613
-Cache        | 12.866.916                    | 50.319.332               | 1.138.442                | 30.957.670
+server       | avg. score continuous config. | avg. score rep config.   | avg. score total config.
+:---         |:---:                          |:---:                     |:---:
+noCache      | 23.095.305                    | 27.749.345               | 79.471.613
+Cache        | 12.866.916                    | 1.138.442                | 30.957.670
 
-**Table 4** - Number of processes, nprocesses and the corresponding the average score of 3 runs of the run-client-continuous configuration.
+**Table 4** - The average score of the thread pool server with (Cache) and without (noCache) caching (3 runs) for the three client configurations.
 
 </center>
 
 
+
+Based on the results the caching functionality was adopted into the server implementaion.
 
 
 <br /> 
@@ -292,15 +325,18 @@ The average score of the pre-forked server vs. number of processes used can be s
 
 <center>
 
-server       | avg. score continuous config. | avg. score delay config. | avg. score difficulty config. | avg. score total config.
-:---         |:---:                          |:---:                     |:---:                     |:---:
-noSplit      | 12.901.995                    | 50.807.699               | 72.256.643               | 32.018.256
-Split        | 6.440.981                     | 47.436.048               | 64.075.291               | 33.719.540
+server       | avg. score continuous config. | avg. score difficulty config. | avg. score total config.
+:---         |:---:                          |:---:                          |:---:
+noSplit      | 12.901.995                    | 72.256.643                    | 32.018.256
+Split        | 6.440.981                     | 64.075.291                    | 33.719.540
 
 **Table 5** - Number of processes, nprocesses and the corresponding the average score of 3 runs of the run-client-continuous configuration.
 
 </center>
 
+
+
+ultimately lead to the rejection of the adoptation of the split request functionality
 
 
 
@@ -429,3 +465,8 @@ process approach
 
 panic mode 
 but split 
+
+
+hash table vs array
+
+reflect here? from experiment ... and from experiment ...
