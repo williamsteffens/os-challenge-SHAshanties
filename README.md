@@ -163,7 +163,7 @@ nthreads | average score
 
 <br /> 
 
-## Experiment 1c - 
+## Experiment 1c - 4-way Comparison of Multiprocessing vs. Multithreading and ***On the Fly*** vs. ***Pooled***
 **Hypothesis:** 
 
 The number of processes of a pre-forked server significantly influences the server's performance. 
