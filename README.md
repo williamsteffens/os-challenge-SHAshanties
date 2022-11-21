@@ -425,6 +425,18 @@ Prio         | 11.945.608                    | 19.218.756                | 31.69
 
 </center>
 
+<center>
+    
+lambda  | noPrio avg. score | prio avg. score   |
+:---    |:---:              |:---:              |                    
+0.25    | x                 | x                 |
+0.17    | x                 | x                 |
+0.10    | 945.117.098       | 500.816.263       |  
+
+**Table 8** - Average score for each server when only lambda is adjusted 
+    
+</center>
+
 **Conclusion** 
 
 While not taking into account the waiting time of lower priority requests, the performance might be compromised by this side effect. Even if the higher priority requests are executed faster, the waiting time may become exstensive in certain scenarios in which the lower priority requests are put on hold while a large chunk of higher priority requests get executed. Evenmore, the priority queue is constantly being updated with new requests which are enqueued in their corresponding queue. This poses a risk of neglect of lower priority requests. A work around for this could be introducing additional parameters, such as queue time, same priority chunk size, etc.  
