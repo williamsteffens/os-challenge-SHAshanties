@@ -397,6 +397,9 @@ By ordering requests in a priority queue, the requests with higher priority woul
 - client/run-client-continuous.sh
 - client/run-client-lambda.sh
 - client/run-client-total.sh
+- client/run-client-lambda-medium.sh
+- client/run-client-lambda-low.sh
+- client/run-client-lambda-lower.sh
 - experiments/e5_prio/*
 
 **Setup:**
@@ -439,7 +442,8 @@ lambda  | noPrio avg. score | prio avg. score   |
 
 **Conclusion** 
 
-While not taking into account the waiting time of lower priority requests, the performance might be compromised by this side effect. Even if the higher priority requests are executed faster, the waiting time may become exstensive in certain scenarios in which the lower priority requests are put on hold while a large chunk of higher priority requests get executed. Evenmore, the priority queue is constantly being updated with new requests which are enqueued in their corresponding queue. This poses a risk of neglect of lower priority requests. A work around for this could be introducing additional parameters, such as queue time, same priority chunk size, etc.  
+While not taking into account the waiting time of lower priority requests, the performance might be compromised by this side effect. Even if the higher priority requests are executed faster, the waiting time may become exstensive in certain scenarios in which the lower priority requests are put on hold while a large chunk of higher priority requests get executed. Evenmore, the priority queue is constantly being updated with new requests which are enqueued in their corresponding queue. This poses a risk of neglect of lower priority requests. A work around for this could be introducing additional parameters, such as queue time, same priority chunk size, etc.
+Due to the performance having negligible difference - an even performing a tiny bit worse in the continuous.sh andf total.sh, the implementation was discarded from the final solution.
 
 # Final Solution
 
