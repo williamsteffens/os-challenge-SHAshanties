@@ -5,7 +5,7 @@ library(Cairo)
 
 #CairoWin()
 
-setwd('X:\\main-folder\\O\\OS\\os-challenge-SHAshanties\\test\\experiments\\e2_cache')
+setwd('X:\\main-folder\\O\\OS\\os-challenge-SHAshanties\\experiments\\e2_cache')
 
 data2 = read.table(".\\data\\e2_data.csv", header = TRUE, sep = ',')
 
@@ -20,8 +20,8 @@ data2Mean$server <- factor(data2Mean$server, levels = c("noCache", "Cache"))
 data2Mean %>%
   ggplot(aes(x = factor(server), y = scoreMean, fill = factor(server))) + 
   geom_bar(stat = "identity", position = "dodge", width = 0.5, alpha = 0.9) + 
-  labs(title = "servers vs. average score",
-       subtitle = "thread pool server vs. cached thread pool server",
+  labs(title = "Thread pool server vs. cached thread pool server",
+       subtitle = "servers vs. average score",
        x = "servers",
        y = "average score",
        fill = "Servers") +

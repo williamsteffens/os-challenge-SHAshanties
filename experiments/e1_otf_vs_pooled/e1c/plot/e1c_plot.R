@@ -5,7 +5,7 @@ library(Cairo)
 
 #CairoWin()
 
-setwd('X:\\main-folder\\O\\OS\\os-challenge-SHAshanties\\test\\experiments\\e1_otf_vs_pooled\\e1c')
+setwd('X:\\main-folder\\O\\OS\\os-challenge-SHAshanties\\experiments\\e1_otf_vs_pooled\\e1c')
 
 data1c = read.table(".\\data\\e1c_data.csv", header = TRUE, sep = ',')
 
@@ -18,8 +18,8 @@ data1cMean <- data1c %>% group_by(server, testtype) %>% summarise(scoreMean = me
 data1cMean %>%
   ggplot(aes(x = factor(server), y = scoreMean, fill = factor(server))) + 
   geom_bar(stat = "identity", position = "dodge", width = 0.5, alpha = 0.9) + 
-  labs(title = "servers vs. average score",
-       subtitle = "4-way comparison of different multiprocessing and multithreading servers",
+  labs(title = "4-way comparison of different multiprocessing and multithreading servers",
+       subtitle = "servers vs. average score",
        x = "servers",
        y = "average score",
        fill = "Servers") +

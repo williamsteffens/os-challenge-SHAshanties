@@ -3,9 +3,9 @@ library(ggthemes)
 library(dplyr)
 library(Cairo)
 
-CairoWin()
+#CairoWin()
 
-setwd('X:\\main-folder\\O\\OS\\os-challenge-SHAshanties\\test\\experiments\\e1_otf_vs_pooled\\e1a')
+setwd('X:\\main-folder\\O\\OS\\os-challenge-SHAshanties\\experiments\\e1_otf_vs_pooled\\e1a')
 
 data1a = read.table(".\\data\\e1a_data.csv", header = TRUE, sep = ',')
 
@@ -16,8 +16,8 @@ head(data1aMean[order(data1aMean$scoreMean) , ])
 data1aMean %>%
   ggplot(aes(x = factor(nprocesses), y = scoreMean)) + 
   geom_bar(stat = "identity", position = "dodge", width = 0.5, alpha = 0.9) + 
-  labs(title = "nprocesses vs. average score",
-       subtitle = "Pre-forked server",
+  labs(title = "Pre-forked server",
+       subtitle = "nprocesses vs. average score",
        x = "nprocesses",
        y = "average score") +
   scale_y_continuous(breaks = scales::pretty_breaks(n = 10)) +

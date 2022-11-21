@@ -74,25 +74,24 @@ The average score of the pre-forked server vs. number of processes used can be s
 
 <center>
 
-nprocesses | average score 
----        |---            
-1          | 1.99          
-2          | 1.89          
-3          | 1.89 
-4          | 1.89 
-5          | 1.89 
-6          | 1.89 
-7          | 1.89 
-8          | 1.89 
-9          | 1.89 
-10         | 1.89 
-15         | 1.89 
-20         |
-25         |
-50         |
-75         |
-100        |
-
+nprocesses | avg. score 
+:---:      |:---:            
+1          | 188.714.681          
+2          | 79.859.721          
+3          | 43.543.070
+4          | 25.659.675
+5          | 28.900.904 
+6          | 29.001.487 
+7          | 28.809.463 
+8          | 31.135.826 
+9          | 29.873.306 
+10         | 30.343.382 
+15         | 33.180.782 
+20         | 31.304.500
+25         | 34.435.920
+50         | 38.438.750
+75         | 39.471.807
+100        | 37.809.006
 
 **Table 1** - Number of processes, nprocesses and the corresponding the average score of 3 runs of the run-client-continuous configuration.
 
@@ -136,25 +135,24 @@ The average score of the pre-forked server vs. number of processes used can be s
 
 <center>
 
-nthreads | average score 
----        |---            
-1          | 1.99          
-2          | 1.89          
-3          | 1.89 
-4          | 1.89 
-5          | 1.89 
-6          | 1.89 
-7          | 1.89 
-8          | 1.89 
-9          | 1.89 
-10         | 1.89 
-15         | 1.89 
-20         |
-25         |
-50         |
-75         |
-100        |
-
+nthreads   | avg. score 
+:---:      |:---:            
+1          | 187.705.339
+2          | 79.464.797
+3          | 42.884.917 
+4          | 24.895.742 
+5          | 25.432.171 
+6          | 25.442.396 
+7          | 27.096.588 
+8          | 28.200.715 
+9          | 27.874.168 
+10         | 28.351.505 
+15         | 28.477.808 
+20         | 33.355.355
+25         | 35.717.697
+50         | 38.801.047
+75         | 40.486.609
+100        | 41.152.935
 
 **Table 2** - Number of processes, nprocesses and the corresponding the average score of 3 runs of the run-client-continuous configuration.
 
@@ -195,25 +193,12 @@ The average score of the pre-forked server vs. number of processes used can be s
 
 <center>
 
-server     | avg. score continuous config. | avg.  
----        |---            
-1          | 1.99          
-2          | 1.89          
-3          | 1.89 
-4          | 1.89 
-5          | 1.89 
-6          | 1.89 
-7          | 1.89 
-8          | 1.89 
-9          | 1.89 
-10         | 1.89 
-15         | 1.89 
-20         |
-25         |
-50         |
-75         |
-100        |
-
+server       | avg. score continuous config. | avg. score delay config. | avg. score difficulty config. | avg. score total config.
+:---         |:---:                          |:---:                     |:---:                          |:---:
+otfProc      | 45.639.617                    | 85.047.194               | 118.839.452                   | 304.733.020
+otfThread    | 40.984.470                    | 79.879.488               | 114.785.781                   | 257.494.808
+pooledProc   | 26.952.785                    | 56.119.947               | 86.149.445                    | 175.179.777
+pooledThread | 24.848.807                    | 54.961.863               | 80.417.041                    | 168.785.700
 
 **Table 3** - Number of processes, nprocesses and the corresponding the average score of 3 runs of the run-client-continuous configuration.
 
@@ -259,25 +244,10 @@ The average score of the pre-forked server vs. number of processes used can be s
 
 <center>
 
-server     | avg. score continuous config. | avg.  
----        |---            
-1          | 1.99          
-2          | 1.89          
-3          | 1.89 
-4          | 1.89 
-5          | 1.89 
-6          | 1.89 
-7          | 1.89 
-8          | 1.89 
-9          | 1.89 
-10         | 1.89 
-15         | 1.89 
-20         |
-25         |
-50         |
-75         |
-100        |
-
+server       | avg. score continuous config. | avg. score delay config. | avg. score rep config.   | avg. score total config.
+:---         |:---:                          |:---:                     |:---:                     |:---:
+noCache      | 23.095.305                    | 52.696.637               | 27.749.345               | 79.471.613
+Cache        | 12.866.916                    | 50.319.332               | 1.138.442                | 30.957.670
 
 **Table 4** - Number of processes, nprocesses and the corresponding the average score of 3 runs of the run-client-continuous configuration.
 
@@ -322,25 +292,10 @@ The average score of the pre-forked server vs. number of processes used can be s
 
 <center>
 
-server     | avg. score continuous config. | avg.  
----        |---            
-1          | 1.99          
-2          | 1.89          
-3          | 1.89 
-4          | 1.89 
-5          | 1.89 
-6          | 1.89 
-7          | 1.89 
-8          | 1.89 
-9          | 1.89 
-10         | 1.89 
-15         | 1.89 
-20         |
-25         |
-50         |
-75         |
-100        |
-
+server       | avg. score continuous config. | avg. score delay config. | avg. score difficulty config. | avg. score total config.
+:---         |:---:                          |:---:                     |:---:                     |:---:
+noSplit      | 12.901.995                    | 50.807.699               | 72.256.643               | 32.018.256
+Split        | 6.440.981                     | 47.436.048               | 64.075.291               | 33.719.540
 
 **Table 5** - Number of processes, nprocesses and the corresponding the average score of 3 runs of the run-client-continuous configuration.
 
@@ -386,34 +341,20 @@ The average score of the pre-forked server vs. number of processes used can be s
 
 <center>
 
-![Figure 6](/experiments/e4_nonblocking_IO/plot/nonblock_e4.png "Figure 6 - figure text")
-**Figure 6** - Number of processes, nprocesses plotted against the average score of 3 runs of the run-client-continuous configuration. 
+![Figure 7](/experiments/e4_nonblocking_IO/plot/nonblock_e4.png "Figure 7 - figure text")
+**Figure 7** - Number of processes, nprocesses plotted against the average score of 3 runs of the run-client-continuous configuration. 
 
 </center>
 
 <center>
 
-server     | avg. score continuous config. | avg.  
----        |---            
-1          | 1.99          
-2          | 1.89          
-3          | 1.89 
-4          | 1.89 
-5          | 1.89 
-6          | 1.89 
-7          | 1.89 
-8          | 1.89 
-9          | 1.89 
-10         | 1.89 
-15         | 1.89 
-20         |
-25         |
-50         |
-75         |
-100        |
+server             | avg. score continuous config.   | avg. score delay config.   | avg. score total config.
+:---               |:---:                            |:---:                       |:---:
+Cache              | 12.724.445                      | 51.209.584                 | 33.476.872
+NonblockingNoSplit | 24.772.857                      | 65.741.297                 | 103.205.123
+NonblockingSplit   | 15.457.998                      | 60.914.793                 | 939.55.287
 
-
-**Table 6** - Number of processes, nprocesses and the corresponding the average score of 3 runs of the run-client-continuous configuration.
+**Table 7** - Number of processes, nprocesses and the corresponding the average score of 3 runs of the run-client-continuous configuration.
 
 </center>
 
@@ -463,25 +404,10 @@ The average score of the pre-forked server vs. number of processes used can be s
 
 <center>
 
-server     | avg. score continuous config. | avg.  
----        |---            
-1          | 1.99          
-2          | 1.89          
-3          | 1.89 
-4          | 1.89 
-5          | 1.89 
-6          | 1.89 
-7          | 1.89 
-8          | 1.89 
-9          | 1.89 
-10         | 1.89 
-15         | 1.89 
-20         |
-25         |
-50         |
-75         |
-100        |
-
+server       | avg. score continuous config. | avg. score lambda config. |  score total config.
+:---         |:---:                          |:---:                      |:---:                    
+noPrio       | 11.821.705                    | 19.440.887                | 30.428.390              
+Prio         | 11.945.608                    | 19.218.756                | 31.699.477              
 
 **Table 7** - Number of processes, nprocesses and the corresponding the average score of 3 runs of the run-client-continuous configuration.
 

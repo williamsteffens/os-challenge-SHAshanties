@@ -5,7 +5,7 @@ library(Cairo)
 
 #CairoWin()
 
-setwd('X:\\main-folder\\O\\OS\\os-challenge-SHAshanties\\test\\experiments\\e3_split')
+setwd('X:\\main-folder\\O\\OS\\os-challenge-SHAshanties\\experiments\\e3_split')
 
 data3 = read.table(".\\data\\e3_data.csv", header = TRUE, sep = ',')
 

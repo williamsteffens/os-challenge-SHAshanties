@@ -5,7 +5,7 @@ library(Cairo)
 
 #CairoWin()
 
-setwd('X:\\main-folder\\O\\OS\\os-challenge-SHAshanties\\test\\experiments\\e4_nonblocking_IO')
+setwd('X:\\main-folder\\O\\OS\\os-challenge-SHAshanties\\experiments\\e4_nonblocking_IO')
 
 data4 = read.table(".\\data\\e4_data.csv", header = TRUE, sep = ',')
 

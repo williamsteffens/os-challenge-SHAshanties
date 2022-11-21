@@ -5,7 +5,7 @@ library(Cairo)
 
 #CairoWin()
 
-setwd('X:\\main-folder\\O\\OS\\os-challenge-SHAshanties\\test\\experiments\\e5_prio')
+setwd('X:\\main-folder\\O\\OS\\os-challenge-SHAshanties\\experiments\\e5_prio')
 
 data5 = read.table(".\\data\\e5_data.csv", header = TRUE, sep = ',')
 

@@ -5,7 +5,7 @@ library(Cairo)
 
 #CairoWin()
 
-setwd('X:\\main-folder\\O\\OS\\os-challenge-SHAshanties\\test\\experiments\\e1_otf_vs_pooled\\e1b')
+setwd('X:\\main-folder\\O\\OS\\os-challenge-SHAshanties\\experiments\\e1_otf_vs_pooled\\e1b')
 
 data1b = read.table(".\\data\\e1b_data.csv", header = TRUE, sep = ',')
 
@@ -16,8 +16,8 @@ head(data1bMean[order(data1bMean$scoreMean) , ])
 data1bMean %>%
   ggplot(aes(x = factor(nthreads), y = scoreMean)) + 
   geom_bar(stat = "identity", position = "dodge", width = 0.5, alpha = 0.9) + 
-  labs(title = "nthreads vs. average score",
-       subtitle = "Thread Pool Server",
+  labs(title = "Thread Pool Server",
+       subtitle = "nthreads vs. average score",
        x = "nthreads",
        y = "average score") +
   scale_y_continuous(breaks = scales::pretty_breaks(n = 10)) +
