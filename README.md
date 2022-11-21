@@ -361,7 +361,7 @@ William
 
 **Motivation:**
 
-For the chaced thread pool server, the thread worker functions contained a blocking I/O call (`write()` to respond to the client). Having blocking I/O calls inside the thread worker function might cause them to stall, and worsen the performance of the server. For testing this, the `write()` call was moved to the "conducting" thread, the one that was doing the `accept()`, `read()` that would be in charge of doing all the I/O.
+For the cached thread pool server, the thread worker functions contained a blocking I/O call (`write()` to respond to the client). Having blocking I/O calls inside the thread worker function might cause them to stall, and worsen the performance of the server. For testing this, the `write()` call was moved to the "conducting" thread, the one that was doing the `accept()`, `read()` that would be in charge of doing all the I/O.
 
 For the "conducting" thread to be able to respond to the client, while still accepting new requests, the I/O had to be made nonblocking (otherwise the "conducting" thread could get blocked on `accept()` after the last requests, while still having responses to `write()`), which was done using `epoll`.
 
@@ -418,24 +418,20 @@ Based on the results the hypothesis was rejected and the neither of the nonblock
 
 # Experiment 5 - Naive Priority Queue : Highest first
 
-**Responsible:** 
-
+### **Responsible:** 
 Aleksandar
 
-**Motivation:**
-
+### **Motivation:**
 As more and more requests are sent to the server, a queue is inbound to happen. At this point, the implementation has to decide on which requests get to be executed first - and by which parameters. When a request is recieved it has a priority value attatched to it. This indicates the importance of execution and its priority over other requests with lower priority. 
 
 Without any implemented logic for prioritizing higher priority requests, the execution would be dictated simply by _"First-In-First-Out"_-principle, or **F.I.F.O**, with no regard for prioritization. This could impact the overall benchmark performance in regards to a lower _lamba_-value. 
 
 The mindset we had going into this experiment was to improve the performance by building on top of the cache pooled thread server. As such, we had already reached 100% reliability, thus the goal for this implementation was to analyse and determine the influence that prioritization had on the request handling. 
 
-**Hypothesis:** 
-
+### **Hypothesis:** 
 By ordering requests in a priority queue, the requests with higher priority would be executed quicker. This could have an effect on the benchmark, perhapse improving performance due to execution time for high priority requests.
 
-**Relevant files:**
-
+### **Relevant files:**
 - task_queue.c 
 - task_queue.h
 - task_priority_queue.c
@@ -451,12 +447,10 @@ By ordering requests in a priority queue, the requests with higher priority woul
 - client/run-client-lambda-lower.sh
 - experiments/e5_prio/*
 
-**Setup:**
-
+### **Setup:**
 For testing the priority queue implementation, we have compared the priority_server with the cached_server, on which is was further implemented. The two servers were tested 3 times each using run-client-continuous.sh, run-client-lambda.sh and run-client-total.sh. The result for each client test is then calculated as the average for the 3 executions. By using the three different tests, we can compare the two servers on quantity intake and lambda value. If the hypothesis is to be confirmed, we should see a difference in the execution of run-client-lambda.sh. In these tests the lambda value has been set to 0.25, 0.17 and 0.1 respectivly.
 
-**Results:**
-
+### **Results:**
 The average score of the pre-forked server vs. number of processes used can be seen plotted in Figure 1, as well as in Table 1.
 
 <center>
@@ -489,8 +483,7 @@ lambda  | noPrio avg. score | prio avg. score   | Redecution [%]    |
     
 </center>
 
-**Conclusion** 
-
+### **Conclusion** 
 While not taking into account the waiting time of lower priority requests, the performance might be compromised by this side effect. Even if the higher priority requests are executed faster, the waiting time may become exstensive in certain scenarios in which the lower priority requests are put on hold while a large chunk of higher priority requests get executed. Evenmore, the priority queue is constantly being updated with new requests which are enqueued in their corresponding queue. This poses a risk of neglect of lower priority requests. A work around for this could be introducing additional parameters, such as queue time, same priority chunk size, etc.
 
 In the lambda tests, there was found to be a clear advantage in the priority queue, where the total score is reduced by aprox. 49%.
@@ -516,22 +509,16 @@ Second step was to determine whether to create a thread for each recieved reques
 To handle potential repeated requests, the caching was tested by implementing a hash table. This solution ment, that the server in some cases would be able to respond immidiately and save execution time, by skipping the hashing work load. The results from experiment 2 concluded, that caching the requests indead cut the execution time significantly and thus, improved the overall score dramatically.  
 
 ### **Splitting**
+So far, each request took up a whole thread at a time. To improve on this, we tested the effect of splitting each request into smaller tasks and dividing these onto more threads in the pool. In experiment 3, it was concluded that the splitting implementation performed better on the continuous configuration. However, this was not the case with a growing number of requests. To counter this, we tried another approach introducing Nonblocking I/O.   
 
 ### **Nonblocking I/O**
+
 
 ### **Prioritization**
 As the requests are recieved by the server, they are executed in a F.I.F.O manner. This means that the requests' priority has no role in the order of which requests get to be executed when. To test the effect of prioritization on the server we implemented a priority queue, which controlled the flow of the requsts' execution on a "highest priority first"-principle. In experiment 5 it was deducted and concluded, that prioritization can have a visible effect. However, this comes down to the processing power of the machine hosting the server, in which case a weaker machine gains more from the prioritization than a more powerfull one. Taking this into account, it was concluded that the final version would be tested on a powerfull processor and thus the prioritization was discarded.   
 
 ### **Final Version Server**
 Our final server implementation is a Threadpooled Multi-threading server with request caching. 
-
-
-The final solution consisted of a cached thread pool server implementation. 
-
-
-
-
-
 
 more time scheduling
 
