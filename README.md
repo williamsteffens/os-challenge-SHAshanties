@@ -252,7 +252,7 @@ The average score of the pre-forked server vs. number of processes used can be s
 
 <center>
 
-![Figure 4](experiments\e2_cache\plot\cached_vs_thread_e2.png "Figure 4 - figure text")
+![Figure 4](/experiments/e2_cache/plot/cached_vs_thread_e2.png "Figure 4 - figure text")
 **Figure 4** - Number of processes, nprocesses plotted against the average score of 3 runs of the run-client-continuous configuration. 
 
 </center>
@@ -315,7 +315,7 @@ The average score of the pre-forked server vs. number of processes used can be s
 
 <center>
 
-![Figure 5](experiments\e3_split\plot\split_e3.png "Figure 5 - figure text")
+![Figure 5](/experiments/e3_split/plot/split_e3.png "Figure 5 - figure text")
 **Figure 5** - Number of processes, nprocesses plotted against the average score of 3 runs of the run-client-continuous configuration. 
 
 </center>
@@ -386,7 +386,7 @@ The average score of the pre-forked server vs. number of processes used can be s
 
 <center>
 
-![Figure 6](experiments\e4_nonblocking_IO\plot\nonblock_e4.png "Figure 6 - figure text")
+![Figure 6](/experiments/e4_nonblocking_IO/plot/nonblock_e4.png "Figure 6 - figure text")
 **Figure 6** - Number of processes, nprocesses plotted against the average score of 3 runs of the run-client-continuous configuration. 
 
 </center>
@@ -456,7 +456,7 @@ The average score of the pre-forked server vs. number of processes used can be s
 
 <center>
 
-![Figure 7](experiments\e5_prio\plot\prio_e5.png "Figure 7 - figure text")
+![Figure 7](/experiments/e5_prio/plot/prio_e5.png "Figure 7 - figure text")
 **Figure 7** - Number of processes, nprocesses plotted against the average score of 3 runs of the run-client-continuous configuration. 
 
 </center>
