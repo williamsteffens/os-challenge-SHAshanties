@@ -27,13 +27,13 @@ int main(int argc, char *argv[])
 
     // Forked servers
     // ------------------------------
-    launch_fork_per_req_server(&server);
-    launch_preforked_server(&server, 4);
+    //launch_fork_per_req_server(&server);
+    //launch_preforked_server(&server, 4);
 
     // Threaded servers
     // ------------------------------
-    launch_thread_per_client_server(&server);
-    launch_thread_pool_server(&server, 4);
+    //launch_thread_per_client_server(&server);
+    //launch_thread_pool_server(&server, 4);
 
     // Cached server
     // ------------------------------
@@ -41,14 +41,14 @@ int main(int argc, char *argv[])
 
     // Split Request server
     // ------------------------------
-    launch_split_req_cached_thread_pool_server(&server, 4);
+    //launch_split_req_cached_thread_pool_server(&server, 4);
 
     // Nonblocking I/O server
     // ------------------------------
-    launch_nonblocking_IO_cached_thread_pool_server(&server, 4);
-    launch_nonblocking_IO_cached_split_thread_pool_server(&server, 4);
+    //launch_nonblocking_IO_cached_thread_pool_server(&server, 4);
+    //launch_nonblocking_IO_cached_split_thread_pool_server(&server, 4);
 
     // Priority server
     // ------------------------------
-    launch_priority_cached_thread_pool_server(&server, 4);
+    //launch_priority_cached_thread_pool_server(&server, 4);
 }
