@@ -54,7 +54,11 @@ No branch structure has been enforced for the final submission, i.e., only the m
 
 ## Experiments
 
+
+
 For the experiments the code used has been listed as **Relevent Files**, and can all be found inside of the source folder.
+
+The **Setup** sections under each experiment expands on how the experiment was conducted. 
 
 For clarification: the variations of client configurations used in the experiments are variations of the continuous client configurations.   
 
@@ -63,11 +67,11 @@ For clarification: the variations of client configurations used in the experimen
 
 
 # Experiment 1 - Multiprocessing vs. Multithreading and ***On the Fly*** vs. ***Pooled***
-**Responsible:** 
+### **Responsible:** 
 
 William
 
-**Motivation:**
+### **Motivation:**
 
 Our benchmark server was implemented using a "fork per request" approach, meaning that for each request the server would create a new process to perform the reverse hashing, after which the process would terminate. The overhead associated with creating a new process per request is not necessarily cheap in regards to performance, and using a different approach might also allow for better parallelization, so the first experiments were dedicated to investigating alternatives to this method.
 
@@ -79,11 +83,11 @@ Before comparing the four approaches, a vital property of the ***Pooled*** versi
 
 
 ## Experiment 1a - Determining the Optimal Number of Processes of a Pre-Forked Server 
-**Hypothesis:** 
+### **Hypothesis:** 
 
 The number of processes of a pre-forked server significantly influences the server's performance.
 
-**Relevant files/folders:**
+### **Relevant files/folders:**
 
 - src/brute_force.c
 - src/brute_force.h
@@ -92,11 +96,11 @@ The number of processes of a pre-forked server significantly influences the serv
 - client/run-client-continuous.sh
 - experiments/e1/e1a/
 
-**Setup:**
+### **Setup:**
 
 For this experiment the run-client-continuous configuration was executed 3 times for every number of processes from 1 to 10, from 10 to 25 in steps of 5, and from 25 to 100 in steps of 25 (i.e., 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 50, 75, and 100) and the average was then taken of the 3 executions. This was done in order to cover a wide range of options for the number of processes, that would hopefully make some pattern emerge that could be concluded on in regards to how the number of pre-forked processes effected the server's performance. 
 
-**Results:**
+### **Results:**
 
 The average score of the pre-forked server vs. number of processes used, nprocesses, can be seen plotted in Figure 1, and the numerical values can be seen listed in Table 1.
 
@@ -140,11 +144,11 @@ Based on the results from experiment 1a, it was decided to use 4 pre-forked proc
 <br /> 
 
 ## Experiment 1b - Determining the Optimal Number of Threads of a Thread Pool Server 
-**Hypothesis:** 
+### **Hypothesis:** 
 
 The number of threads of a thread pool server significantly influences the server's performance. 
 
-**Relevant files:**
+### **Relevant files:**
 
 - src/threaded_server.c
 - src/threaded_server.h
@@ -153,11 +157,11 @@ The number of threads of a thread pool server significantly influences the serve
 - client/run-client-continuous.sh
 - experiments/e1/e1b/
 
-**Setup:**
+### **Setup:**
 
 Similar to experiment 1a, the setup involved running the run-client-continuous configuration 3 times for every number of threads from 1 to 10, from 10 to 25 in steps of 5, and from 25 to 100 in steps of 25 and then take the average of those 3 executions. Again, this was done in order to cover a wide range of options for the number of threads, that would hopefully make some pattern emerge that could be concluded on in regards to how the pool size of a thread pool server effected performance. 
 
-**Results:**
+### **Results:**
 
 The average score of the thread pool server vs. number of threads used can be seen plotted in Figure 2, and the numerical values can be seen listed in Table 2.
 
@@ -203,11 +207,11 @@ Based on the results from experiment 1b, it was decided to use a thread pool siz
 
 Having determinded the optimal sizes of the ***Pooled*** versions, 4 processes for the pre-forked server and 4 threads for the thread pool server, an overall comparison of multiprocessing and multithreading was conducted, to determine the more optimal of the four server approaches. 
 
-**Hypothesis:** 
+### **Hypothesis:** 
 
 Using multiprocessing (***On the Fly*** and ***Pooled***) will lead to a difference in server performance compared to using multithreading (***On the Fly*** and ***Pooled***) from which a more optimal server can be identified.
 
-**Relevant files:**
+### **Relevant files:**
 
 - src/brute_force.c
 - src/brute_force.h
@@ -223,13 +227,13 @@ Using multiprocessing (***On the Fly*** and ***Pooled***) will lead to a differe
 - client/run-client-test-total.sh
 - experiments/e1/e1c/
 
-**Setup:**
+### **Setup:**
 
 In order to identify the more optimal server in regards to the challenge, as well as to identify potential downfalls of an approach, the four approaches were tested against four different client configurations: one using the continuous configuration, one with decreased delay (100.000), one with increased difficulty (60.000.000), and one mimicking the final run of the challenge (at the time of testing, the final challenge was a total of 1000 requests, instead of the 500 it was change to. This experiment used 1000 requests for the configuration mimicking the final challenge, while it was changed to 500 for the other experiments). 
 
 Each configuration was executed 3 times per server and the average score of the 3 executions was used for making the comparisons. 
 
-**Results:**
+### **Results:**
 
 The average score of 3 runs of the four server approaches against the four client configurations can be seen plotted in Figure 3, and the numerical values can be seen listed in Table 3.
 
@@ -253,6 +257,8 @@ pooledThread | 24.848.807                    | 54.961.863               | 80.417
 
 </center>
 
+### **Conclusion** 
+
 From the results, it was very clear that the ***Pooled*** versions outperformed the ***On the Fly*** versions across all four configurations. The ***Pooled*** versions were closer in terms of average score, although the thread pool version proved to be the most optimal across all four client configurations.
 
 Based on the results the fork per request approach was substituted with the thread pool (using 4 threads) approach for the server implementaion. 
@@ -263,21 +269,22 @@ Based on the results the fork per request approach was substituted with the thre
 
 
 # Experiment 2 - Caching Requests
-**Responsible:** 
+
+### **Responsible:** 
 
 William
 
-**Motivation:**
+### **Motivation:**
 
 Given that the client had a chance to send repeated requests, an experiment was dedicated to investigating whether or not caching the requests would lead to increased server performance, as the server would then be able to respond immediately rather than spending resources re-brute forcing the hash of the repeated request. 
 
 This caching functionality was implemented using a hash table with a 1000 buckets to minimize the chance of conclusions that would lead to resources being spend on collision resolution. 
 
-**Hypothesis:** 
+### **Hypothesis:** 
 
 Caching requests and using those to respond to repeated requests would increase server performance significantly.    
 
-**Relevant files:**
+### **Relevant files:**
 
 - src/hash_table.c
 - src/hash_table.h
@@ -288,11 +295,11 @@ Caching requests and using those to respond to repeated requests would increase 
 - client/run-client-test-total-500.sh
 - test/experiments/e2/
 
-**Setup:**
+### **Setup:**
 
 For testing the caching functionality, the thread pool server (the currently most optimal server) was executed against three client configurations with (refered to as Cache in Figure 4 and Table 4) and without (refered to as noCache in Figure 4 and Table 4) caching to determine if the caching improved the server's performance or not. The three client configurations were the continuous, a configuration with increased repetition chance (80%), and the one mimicking the final run of the challenge.  
 
-**Results:**
+### **Results:**
 
 The average score of 3 runs of the thread pool server with (Cache) and without (noCache) caching against the three client configurations can be seen plotted in Figure 4, and the numerical values can be seen listed in Table 4.
 
@@ -314,6 +321,8 @@ Cache        | 12.866.916                    | 1.138.442                | 30.957
 
 </center>
 
+### **Conclusion** 
+
 The cached version of the thread pool server performed significantly better than the version without caching, resulting in an almost 50% performance increase for the continuous configuration and even more so for the final run mimicking configuration, which lead to the hypothesis being accepted.  
 
 Based on the results the caching functionality was adopted into the server implementaion.
@@ -324,19 +333,20 @@ Based on the results the caching functionality was adopted into the server imple
 
 
 # Experiment 3 - Splitting the Request Into Tasks
-**Responsible:** 
+
+###**Responsible:** 
 
 William
 
-**Motivation:**
+### **Motivation:**
  
 The cached thread pool server was dedicating each thread to a single request. An alternative to this could be to split the request into 4 tasks for each of the threads to work on in parallel, and in theory work through each request at a greater speed. Experiment 3 was dedicated to examine if this approach would lead to an increase in server performance. 
 
-**Hypothesis:** 
+### **Hypothesis:** 
 
 Splitting the requests into chunks for the threads to work on will lead to an increase in the server's performance.
 
-**Relevant files:**
+### **Relevant files:**
 
 - src/split_request_server.c
 - src/split_request_server.h
@@ -345,11 +355,11 @@ Splitting the requests into chunks for the threads to work on will lead to an in
 - client/run-client-test-total-500.sh
 - test/experiments/e3/
 
-**Setup:**
+### **Setup:**
 
 For testing the split request functionality, the cached thread pool server (the currently most optimal server) was executed against three client configurations with (refered to as Split in Figure 5 and Table 5) and without (refered to as noSplit in Figure 5 and Table 5) split requests to determine if the splitting of request into tasks improved the server's performance or not. The three client configurations were the continuous, a configuration with increased difficulty (60.000.000), and the one mimicking the final run of the challenge.
 
-**Results:**
+### **Results:**
 
 The average score of 3 runs of the cached thread pool server with (Split) and without (noSPlit) splitting of the request into task against the three client configurations can be seen plotted in Figure 5, and the numerical values can be seen listed in Table 5.
 
@@ -371,6 +381,8 @@ Split        | 6.440.981                     | 64.075.291                    | 3
 
 </center>
 
+### **Conclusion** 
+
 For the continuous configuration the server that was splitting the requests into tasks performed twice as good as the one that did not, but as the number of requests grew the score seemed to equal out, as seen for the total configuration, that was sending 500 requests. To examine this behavior further, the server with and without splitting was executed against a configuration with 1000 total requests, were the server that was splitting scored 65.442.650, while the server that did not scored 52.045.404, which meant that the splitting server performed worse for larger number of total requests. 
 
 As the goal of the challenge was to implement an optimal server for the final run configuration, and not the continuous configuration, it was hard to justify the adoptation of the splitting request into tasks functionality, and ultimately the adoptaion of the splitting requests into tasks functionality was rejected based on the results of experiment 3. 
@@ -381,11 +393,12 @@ As the goal of the challenge was to implement an optimal server for the final ru
 
 
 # Experiment 4 - Nonblocking I/O
-**Responsible:** 
+
+### **Responsible:** 
 
 William
 
-**Motivation:**
+### **Motivation:**
 
 For the cached thread pool server, the thread worker functions contained a blocking I/O call (`write()` to respond to the client). Having blocking I/O calls inside the thread worker function might cause them to stall, and worsen the performance of the server. For testing this, the `write()` call was moved to the "conducting" thread, the one that was doing the `accept()`, `read()` that would be in charge of doing all the I/O.
 
@@ -393,11 +406,11 @@ For the "conducting" thread to be able to respond to the client, while still acc
 
 Wanting to find a remedy for the behavior of splitting request into tasks, that would worsen as the total number of requests grew, it was decided to implement a split requests version of the nonblocking I/O as well, given the possibility that the blocking I/O, might have had something to do with the aforementioned behavior.
  
-**Hypothesis:** 
+### **Hypothesis:** 
 
 Having blocking IO calls inside of the thread worker functions is worsening the server's performance and moving those calls to the conducting thread will increase server performance. 
 
-**Relevant files:**
+### **Relevant files:**
 
 - src/nonblocking_IO_server.c
 - src/nonblocking_IO_server.h
@@ -406,12 +419,10 @@ Having blocking IO calls inside of the thread worker functions is worsening the 
 - client/run-client-test-total-500.sh
 - test/experiments/e1/e1a/
 
-**Setup:**
- 
+### **Setup:**
 For testing the nonblocking I/O functionality, the cached thread pool server (the currently most optimal server), and a nonblocking I/O cached thread pool server server with (NonblockingSplit) and without (NonblockingNoSPlit) splitting of the request into task was executed against three client configurations. The three client configurations were the continuous, a configuration with decreased delay (100.000), and the one mimicking the final run of the challenge.
 
-**Results:**
-
+### **Results:**
 The average score of 3 runs of the cached thread pool server (Cache), and the nonblocking I/O server with (NonblockingSplit) and without (NonblockingNoSPlit) splitting of the request into task against the three client configurations can be seen plotted in Figure 6, and the numerical values can be seen listed in Table 6.
 
 <center>
@@ -433,6 +444,8 @@ NonblockingSplit   | 15.457.998                      | 60.914.793               
 
 </center>
 
+### **Conclusion** 
+
 From the results no performance increase from either the nonblocking I/O with or without splitting requests could be concluded. One quite likely reason for this, that we failed to notice before implementing the nonblocking I/O server, was that having the "conducting" thread constantly checking for responses to send out might have caused ineffiecient resource utilization, in contrast to the cached threaded server that would block and allow the worker threads to perform the reverse hashing. For the nonblocking approach to have been an improvement to server performance some sort of scheduling would perhaps have been necessary.  
 
 Based on the results the hypothesis was rejected and the neither of the nonblocking I/O servers was not adopted into the server implementation.
@@ -445,6 +458,7 @@ Based on the results the hypothesis was rejected and the neither of the nonblock
 # Experiment 5 - Naive Priority Queue : Highest first
 
 ### **Responsible:** 
+
 Aleksandar
 
 ### **Motivation:**
