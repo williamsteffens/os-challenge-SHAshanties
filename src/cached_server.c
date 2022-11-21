@@ -30,15 +30,12 @@
 #include <sched.h>
 #include <sys/wait.h>
 
-
 #include <assert.h>
 #include <sched.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-
-
 
 void launch_cached_thread_pool_server(struct Server *server, int nthreads)
 {

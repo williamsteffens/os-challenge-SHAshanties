@@ -1,13 +1,13 @@
-#ifndef QUEUE_REQ_C
-#define QUEUE_REQ_C
+#ifndef TASK_QUEUE_C
+#define TASK_QUEUE_C
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include "os-challenge-util.h"
-//#include "task_node.h"
 #include "task_queue.h"
 
+// Creates a *task_node and inserts the *task_t into the node, which is then enqueued in the *task_queue_t
 void enqueue_task_q(task_queue_t *q, task_t *t){
     task_node_t *new_node = malloc(sizeof(task_node_t));
     new_node->task = t;
@@ -26,6 +26,7 @@ void enqueue_task_q(task_queue_t *q, task_t *t){
     q->tail = new_node;    
 }
 
+// Dequeues *head *task_node from *task_queue_t and returns the *task_t
 task_t *dequeue_task_q(task_queue_t *q){
     // If priority queue is empty
     if(q->head == NULL){
@@ -47,4 +48,4 @@ task_t *dequeue_task_q(task_queue_t *q){
     return result;
 }
 
-#endif // QUEUE_REQ_C
+#endif // TASK_QUEUE_C
