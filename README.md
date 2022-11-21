@@ -486,13 +486,19 @@ In the lambda tests, there was found to be a clear advantage in the priority que
 However, due to the performance having negligible difference - an even performing a tiny bit worse in the continuous.sh andf total.sh, the implementation was discarded from the final solution.
 
 # Final Solution
+To summarize the development leading to our final server version, we conducted experiments in an incremental manner, improving the server step by step.
+
+**Process Approach**
+
+First step was to decide between Multi-processing and Multi-threading. The divede between processors in Multi-processing invites the chance for idleness and waiting time, whereas Multi-threading provides a work around in the form of its threads sharing the same code base, meaning that down time is removed. From experiment 1c, it was clearly found, that Multi-threading had a clear advantage in the servers performance and as such it became our method for process handling.  
+
+**On the fly vs. Pooled**
+Second step was to determine  
 
 
 more time scheduling
 
 attribute 
-
-process approach 
 
 panic mode 
 but split 
